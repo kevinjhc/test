@@ -57,7 +57,7 @@ export function ChatPage({ chatId, title }: ChatPageProps) {
       {/* LLM input at bottom, centered with max width */}
       <div className="w-full p-6">
         <div className="max-w-3xl mx-auto">
-          <div className="rounded-xl border-2 border-gray-200 p-4 flex items-center justify-between gap-4">
+          <div className="rounded-3xl border-2 border-gray-200 p-4 flex items-center justify-between gap-4">
             <div className="flex-1 gap-4 flex flex-col">
               
                 <textarea

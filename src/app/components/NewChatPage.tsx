@@ -26,7 +26,7 @@ export function NewChatPage() {
                     <h2 className="text-3xl text-gray-800 font-light mb-2">How can I help?</h2>
                     <p className="text-md text-gray-500">Ask me about your contracts, documents, or recent conversations with your legal team.</p>
                 </div>
-              <div className="rounded-xl border-2 border-gray-200 p-4 flex flex-col gap-4">
+              <div className="rounded-3xl border-2 border-gray-200 p-4 flex flex-col gap-4">
                 <textarea
                   ref={textareaRef}
                   value={input}
