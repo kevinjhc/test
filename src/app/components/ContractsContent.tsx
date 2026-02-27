@@ -39,9 +39,9 @@ export function ContractsContent({
   return (
     <div className="h-full overflow-y-auto">
       {/* Header section */}
-      <div className="p-6 py-8 max-w-5xl mx-auto">
+      <div className="p-5 md:p-6 py-4 md:py-8 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="text-3xl font-semibold">Files</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold">Files</h1>
           <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-full hover:bg-gray-600 transition-colors text-md cursor-pointer">
             <IconUpload size={20} />
             Upload file
@@ -54,7 +54,7 @@ export function ContractsContent({
       </div>
 
       {/* Filter tabs */}
-      <div className="px-6 pb-8 max-w-5xl mx-auto">
+      <div className="px-5 md:px-6 pb-5 md:pb-8 max-w-5xl mx-auto">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {filters.map((filter) => (
             <button
@@ -143,7 +143,7 @@ export function ContractsContent({
       </div>
 
       {/* Mobile card view */}
-      <div className="md:hidden px-6">
+      <div className="md:hidden px-5 md:px-6">
         <div className="space-y-4">
           {contracts.map((contract) => (
             <div
