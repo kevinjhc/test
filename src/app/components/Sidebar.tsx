@@ -191,7 +191,7 @@ export function Sidebar({
       {/* Sidebar */}
       <aside
         className={`
-          fixed md:sticky top-0 left-0 h-full bg-white border-r border-gray-200
+          fixed md:sticky top-0 left-0 h-full bg-gray-50 border-r border-gray-200
           flex flex-col transition-all duration-300 z-50
           ${isExpanded ? "w-[320px]" : "w-14"}
           ${isMobile && !isExpanded ? "hidden" : ""}

@@ -24,7 +24,7 @@ export function ChatPage({ chatId, title }: ChatPageProps) {
   return (
     <div className="h-full relative flex flex-col">
       {/* Full-width header with bottom border */}
-      <header className="w-full border-b border-gray-200 px-5 md:px-6 py-4">
+      <header className="bg-gray-50 w-full border-b border-gray-200 px-5 md:px-6 py-4">
         <h1 className="text-base font-semibold">{title ?? "Chat"}</h1>
       </header>
 

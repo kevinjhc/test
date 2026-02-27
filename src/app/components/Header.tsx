@@ -7,7 +7,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
 	return (
-		<header className="md:hidden border-b border-gray-200 pl-5 pr-3 py-3">
+		<header className=" md:hidden border-b border-gray-200 pl-5 pr-3 py-3">
 			<div className="flex items-center justify-between max-w-5xl mx-auto">
 				<div className="flex items-center">
 					<svg

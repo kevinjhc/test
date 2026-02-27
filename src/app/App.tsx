@@ -97,10 +97,10 @@ export default function App() {
   return (
     <div className="h-screen flex flex-1 overflow-hidden bg-white flex-col">
       {/* Privileged & Confidential Banner */}
-      <footer className="bg-[#f0eee5] border-[#dbdcd6] border-b px-6 py-1 flex items-center justify-center gap-2.5 rounded-b-xl">
+      <footer className="bg-blue-50 border-blue-200 text-blue-900 border-b px-6 py-1 flex items-center justify-center gap-2.5 rounded-b-xl">
         <IconShield size="16" />
-        <span className="opacity-70 text-xs">Privileged & Confidential</span>
-        <button className="no-underline hover:underline text-xs cursor-pointer">
+        <span className="opacity-70 font-semibold text-xs">Privileged & Confidential</span>
+        <button className="no-underline font-normal hover:underline text-xs cursor-pointer">
           Learn more
         </button>
       </footer>
