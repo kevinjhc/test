@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { Header } from "./components/Header";
 import { ContractsContent } from "./components/ContractsContent";
+import { ChatPage } from "./components/ChatPage";
+import NewChatPage from "./components/NewChatPage";
 import { IconShield } from "@tabler/icons-react";
 
 // Mock contract data
@@ -52,6 +54,9 @@ export default function App() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
+  const [view, setView] = useState<"files" | "chat" | "newChat">("newChat");
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [activeChatTitle, setActiveChatTitle] = useState<string | null>(null);
 
   // Detect mobile viewport
   useEffect(() => {
@@ -73,10 +78,26 @@ export default function App() {
     setIsSidebarExpanded(!isSidebarExpanded);
   };
 
+  const handleNewChat = () => {
+    setActiveChatId(null);
+    setActiveChatTitle(null);
+    setView("newChat");
+  };
+
+  const handleSelectChat = (id: string, title: string) => {
+    setActiveChatId(id);
+    setActiveChatTitle(title);
+    setView("chat");
+  };
+
+  const handleShowFiles = () => {
+    setView("files");
+  };
+
   return (
     <div className="h-screen flex flex-1 overflow-hidden bg-white flex-col">
       {/* Privileged & Confidential Banner */}
-      <footer className="bg-black/5 px-6 border-b border-gray-200 py-1 flex items-center justify-center gap-2.5 rounded-b-xl">
+      <footer className="bg-[#f0eee5] border-[#dbdcd6] border-b px-6 py-1 flex items-center justify-center gap-2.5 rounded-b-xl">
         <IconShield size="16" />
         <span className="opacity-70 text-xs">Privileged & Confidential</span>
         <button className="no-underline hover:underline text-xs cursor-pointer">
@@ -90,6 +111,9 @@ export default function App() {
           isExpanded={isSidebarExpanded}
           onToggle={toggleSidebar}
           isMobile={isMobile}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+          onShowFiles={handleShowFiles}
         />
 
         {/* Main content */}
@@ -99,11 +123,17 @@ export default function App() {
 
           {/* Content area */}
           <div className="flex-1 overflow-hidden">
-            <ContractsContent
-              contracts={mockContracts}
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-            />
+            {view === "files" ? (
+              <ContractsContent
+                contracts={mockContracts}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
+            ) : view === "newChat" ? (
+              <NewChatPage />
+            ) : (
+              <ChatPage chatId={activeChatId} title={activeChatTitle} />
+            )}
           </div>
         </main>
       </div>

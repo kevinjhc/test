@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  IconMessageCircle,
   IconFile,
   IconPlus,
   IconLayoutSidebar,
@@ -8,15 +7,19 @@ import {
   IconCreditCard,
   IconLogout,
   IconChevronDown,
-  IconCircle,
   IconUserPlus,
-  IconChevronRight,
+  IconTrash,
 } from "@tabler/icons-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "./ui/tooltip";
 
 interface SidebarProps {
   isExpanded: boolean;
   onToggle: () => void;
   isMobile?: boolean;
+  onNewChat?: () => void;
+  onSelectChat?: (id: string, title: string) => void;
+  onShowFiles?: () => void;
+  onDeleteChat?: (id: string) => void;
 }
 
 interface ChatItem {
@@ -152,6 +155,10 @@ export function Sidebar({
   isExpanded,
   onToggle,
   isMobile = false,
+  onNewChat,
+  onSelectChat,
+  onShowFiles,
+  onDeleteChat,
 }: SidebarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoVisible, setIsLogoVisible] = useState(false);
@@ -195,7 +202,7 @@ export function Sidebar({
           {/* Header */}
           <div className="flex-shrink-0 pt-4 pb-3">
             <div className="flex items-center flex-row">
-              {isExpanded && (
+                {isExpanded && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="149"
@@ -213,12 +220,19 @@ export function Sidebar({
               {/* Collapse/expand button */}
               {!isMobile && (
                 <div className="w-14 flex items-center justify-center flex-shrink-0">
-                  <button
-                    onClick={onToggle}
-                    className="p-1.5 hover:cursor-pointer rounded-full flex items-center justify-center hover:bg-gray-100"
-                  >
-                    <IconLayoutSidebar size={20} />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={onToggle}
+                        className="p-1.5 hover:cursor-pointer rounded-full flex items-center justify-center hover:bg-gray-100"
+                      >
+                        <IconLayoutSidebar size={20} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" align="center" hidden={isMobile}>
+                      {isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               )}
             </div>
@@ -227,47 +241,71 @@ export function Sidebar({
           {/* Navigation items */}
           <div className="flex-shrink-0 px-2">
             <nav className="space-y-1">
-              <button className="w-full flex items-center py-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="w-10 flex items-center justify-center flex-shrink-0">
-                  <IconPlus size={20} />
-                </div>
-                <span className="text-md whitespace-nowrap overflow-hidden">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={() => onNewChat && onNewChat()} className="w-full flex items-center py-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                    <div className="w-10 flex items-center justify-center flex-shrink-0">
+                      <IconPlus size={20} />
+                    </div>
+                    <span className="text-md whitespace-nowrap overflow-hidden">
+                      New Chat
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" hidden={isExpanded || isMobile}>
                   New Chat
-                </span>
-              </button>
+                </TooltipContent>
+              </Tooltip>
 
-              <button className="w-full flex items-center py-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="w-10 flex items-center justify-center flex-shrink-0">
-                  <IconFile size={20} />
-                </div>
-                <span className="text-md whitespace-nowrap overflow-hidden">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={() => onShowFiles && onShowFiles()} className="w-full flex items-center py-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                    <div className="w-10 flex items-center justify-center flex-shrink-0">
+                      <IconFile size={20} />
+                    </div>
+                    <span className="text-md whitespace-nowrap overflow-hidden">
+                      Files
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" hidden={isExpanded || isMobile}>
                   Files
-                </span>
-              </button>
+                </TooltipContent>
+              </Tooltip>
             </nav>
           </div>
 
-          {isExpanded && (
-            <div className="flex-shrink-0 w-full h-px bg-gray-200 my-4"></div>
+            {isExpanded && (
+            <div className="flex-shrink-0 w-full h-px bg-gray-200 mt-4"></div>
           )}
 
-          {isExpanded && (
-            <div className="flex-1 min-h-0 overflow-y-auto px-2">
+            {isExpanded && (
+            <div className="flex-1 min-h-0 overflow-y-auto px-2 pt-4">
               {mockChats.map((chat) => (
                 <button
-                  key={chat.id}
-                  className="w-full px-3 p-2 rounded-xl hover:bg-gray-100 transition-colors text-left group cursor-pointer"
+                  key={Math.random().toString(36).slice(2)}
+                  onClick={() => onSelectChat && onSelectChat(chat.id, chat.title)}
+                  className="relative w-full px-3 p-2 rounded-xl hover:bg-gray-100 transition-colors text-left group cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h4 className="text-md font-medium line-clamp-1 whitespace-nowrap">
+                    <h4 title={chat.title} className="text-md font-medium truncate">
                       {chat.title}
                     </h4>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm text-gray-500 line-clamp-1 whitespace-nowrap">
-                      {chat.timestamp}
-                    </p>
+                    <p className="text-sm text-gray-500 truncate">{chat.timestamp}</p>
                   </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteChat && onDeleteChat(chat.id);
+                    }}
+                    className="absolute right-2.5 top-4.5 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-600 p-1 rounded"
+                    aria-label="Delete chat"
+                  >
+                    <IconTrash size={16} />
+                  </button>
                 </button>
               ))}
             </div>
@@ -316,14 +354,21 @@ export function Sidebar({
         {/* Bottom section */}
         <>
           {/* Invite button */}
-          <button className="w-full flex items-center border-t border-gray-200 hover:bg-gray-100 transition-colors px-3 py-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
-              <IconUserPlus size={20} />
-            </div>
-            <span className="text-sm whitespace-nowrap ml-3 overflow-hidden">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="w-full flex items-center border-t border-gray-200 hover:bg-gray-100 transition-colors px-3 py-2 cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                  <IconUserPlus size={20} />
+                </div>
+                <span className="text-sm whitespace-nowrap ml-3 overflow-hidden">
+                  Invite teammates
+                </span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" align="center" hidden={isExpanded || isMobile}>
               Invite teammates
-            </span>
-          </button>
+            </TooltipContent>
+          </Tooltip>
           <div className="border-t border-gray-200 relative">
             {/* Dropdown menu */}
             {isDropdownOpen && (
