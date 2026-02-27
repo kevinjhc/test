@@ -6,12 +6,13 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   return (
-    <header className="flex items-center justify-between px-5 py-4 border-b rounded-b-xl border-gray-200 md:hidden bg-white sticky top-0 z-30">
+    <header className="flex items-center justify-between px-5 py-3 border-b rounded-b-xl border-gray-200 md:hidden bg-white sticky top-0 z-30">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="149"
         height="20"
         fill="none"
+        className="mt-1"
       >
         <path
           fill="#000"

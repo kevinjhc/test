@@ -143,27 +143,27 @@ export function ContractsContent({
       </div>
 
       {/* Mobile card view */}
-      <div className="md:hidden px-4">
+      <div className="md:hidden px-6">
         <div className="space-y-4">
           {contracts.map((contract) => (
             <div
               key={contract.id}
               className="bg-white border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer"
             >
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-                  <IconFile size={20} className="text-white" />
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <IconFileTypeDocx size={20} className="text-blue-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-md font-medium line-clamp-2 mb-2">
+                  <div className="text-md line-clamp-2 mb-2">
                     {contract.name}
-                  </h3>
+                  </div>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-sm text-green-700">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
                       {contract.status}
                     </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-gray-300 text-sm text-gray-600">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-300 text-xs text-gray-600 font-mono">
                       {contract.version}
                     </span>
                   </div>
