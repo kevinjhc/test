@@ -1,0 +1,548 @@
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import type { SharedContract } from "../App";
+import {
+  IconUpload,
+  IconPlus,
+  IconMessageCircle,
+  IconBuilding,
+  IconLoader2,
+  IconLayoutColumns,
+} from "@tabler/icons-react";
+import { UploadContractModal } from "./UploadContractModal";
+
+type ColumnId = "review" | "ready" | "negotiation" | "approved" | "signed";
+
+interface Contract {
+  id: string;
+  type: string;
+  name: string;
+  company: string;
+  status: ColumnId;
+  isLoading?: boolean;
+  loadingText?: string;
+  isNew?: boolean;
+  animatingIn?: boolean;
+}
+
+const COLUMNS: { id: ColumnId; label: string }[] = [
+  { id: "review", label: "In Review by General Legal" },
+  { id: "ready", label: "Ready for Review" },
+  { id: "negotiation", label: "In Negotiation" },
+  { id: "approved", label: "Approved" },
+  { id: "signed", label: "Signed" },
+];
+
+interface DragState {
+  contractId: string;
+  sourceColumn: ColumnId;
+}
+
+interface QuickActionProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  iconBg?: string;
+  onClick?: () => void;
+  className?: string;
+}
+
+function QuickAction({
+  icon,
+  title,
+  description,
+  iconBg,
+  onClick,
+  className,
+}: QuickActionProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer ${className ?? ""}`}
+    >
+      <div
+        className={`flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 ${iconBg ?? "bg-gray-100"}`}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <div className="font-semibold text-gray-900 text-sm lg:text-base">
+          {title}
+        </div>
+        <div className="hidden lg:block text-sm text-gray-500">
+          {description}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+interface KanbanCardProps {
+  contract: Contract;
+  onDragStart: (
+    e: React.DragEvent,
+    contractId: string,
+    sourceColumn: ColumnId,
+  ) => void;
+  isDragging: boolean;
+  onCardClick?: (contractId: string) => void;
+}
+
+function KanbanCard({
+  contract,
+  onDragStart,
+  isDragging,
+  onCardClick,
+}: KanbanCardProps) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, contract.id, contract.status)}
+      onClick={() => onCardClick?.(contract.id)}
+      className={`bg-white border border-gray-200 rounded-xl p-4 cursor-pointer select-none transition-all hover:bg-gray-50 hover:shadow-sm ${
+        isDragging ? "opacity-40" : "opacity-100"
+      } ${contract.isNew ? "animate-in fade-in slide-in-from-top-2 duration-500" : ""}`}
+    >
+      <div className="mb-3">
+        <span className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded-md">
+          {contract.type}
+        </span>
+      </div>
+      <div className="font-semibold text-gray-900 text-sm mb-2 leading-snug line-clamp-2">
+        {contract.name}
+      </div>
+      <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+        <IconBuilding size={13} className="flex-shrink-0" />
+        <span>{contract.company}</span>
+      </div>
+      {contract.isLoading && (
+        <div className="flex items-center gap-1.5 text-xs text-blue-500 border-t border-gray-100 pt-3">
+          <IconLoader2 size={13} className="animate-spin flex-shrink-0" />
+          <span>{contract.loadingText}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface KanbanColumnProps {
+  column: { id: ColumnId; label: string };
+  contracts: Contract[];
+  dragState: DragState | null;
+  isDragOver: boolean;
+  onDragStart: (
+    e: React.DragEvent,
+    contractId: string,
+    sourceColumn: ColumnId,
+  ) => void;
+  onDragOver: (e: React.DragEvent, columnId: ColumnId) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent, columnId: ColumnId) => void;
+  onDragEnd: () => void;
+  onCardClick?: (contractId: string) => void;
+}
+
+function KanbanColumn({
+  column,
+  contracts,
+  dragState,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  onCardClick,
+}: KanbanColumnProps) {
+  return (
+    <div className="flex flex-col min-w-0 flex-1">
+      <div className="flex items-center gap-2 mb-3 ml-3">
+        <h3 className="font-semibold text-gray-900 text-base whitespace-nowrap">
+          {column.label}
+        </h3>
+        {contracts.length > 0 && (
+          <span className="bg-gray-100 text-gray-600 text-xs font-medium px-1.5 py-0.5 rounded-full ml-auto">
+            {contracts.length}
+          </span>
+        )}
+      </div>
+
+      <div
+        onDragOver={(e) => onDragOver(e, column.id)}
+        onDragLeave={onDragLeave}
+        onDrop={(e) => onDrop(e, column.id)}
+        onDragEnd={onDragEnd}
+        className={`flex-1 min-h-32 rounded-xl transition-colors p-2 ${
+          isDragOver
+            ? "bg-blue-50 border-2 border-dashed border-blue-300"
+            : "border-2 border-dashed border-transparent"
+        }`}
+      >
+        <div className="flex flex-col gap-4">
+          {contracts.map((contract) => (
+            <KanbanCard
+              key={contract.id}
+              contract={contract}
+              onDragStart={onDragStart}
+              isDragging={dragState?.contractId === contract.id}
+              onCardClick={onCardClick}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface HomePageProps {
+  contracts: SharedContract[];
+  onNewChat?: () => void;
+  onCardClick?: (contractId: string) => void;
+  onUpload?: (file: File) => void;
+  onKanbanStatusChange?: (
+    id: string,
+    status: SharedContract["kanbanStatus"],
+  ) => void;
+}
+
+function toInternalContract(c: SharedContract, isNew = false): Contract {
+  return {
+    id: c.id,
+    type: c.type,
+    name: c.name,
+    company: c.company,
+    status: c.kanbanStatus,
+    isLoading: c.isLoading,
+    loadingText: c.loadingText,
+    isNew,
+  };
+}
+
+export function HomePage({
+  contracts: sharedContracts,
+  onNewChat,
+  onCardClick,
+  onUpload,
+  onKanbanStatusChange,
+}: HomePageProps) {
+  const [localContracts, setLocalContracts] = useState<Contract[]>(() =>
+    sharedContracts.map((c) => toInternalContract(c)),
+  );
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
+  const dragLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, scrollLeft: 0 });
+
+  const handleBoardMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // Only pan on direct background clicks, not on cards
+      if ((e.target as HTMLElement).closest("[draggable]")) return;
+      isPanning.current = true;
+      panStart.current = {
+        x: e.clientX,
+        scrollLeft: boardRef.current?.scrollLeft ?? 0,
+      };
+      e.currentTarget.style.cursor = "grabbing";
+    },
+    [],
+  );
+
+  const handleBoardMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!isPanning.current || !boardRef.current) return;
+      e.preventDefault();
+      const dx = e.clientX - panStart.current.x;
+      boardRef.current.scrollLeft = panStart.current.scrollLeft + dx;
+    },
+    [],
+  );
+
+  const handleBoardMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      isPanning.current = false;
+      e.currentTarget.style.cursor = "grab";
+    },
+    [],
+  );
+
+  const handleBoardMouseLeave = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      isPanning.current = false;
+      e.currentTarget.style.cursor = "grab";
+    },
+    [],
+  );
+
+  const handleDragStart = (
+    e: React.DragEvent,
+    contractId: string,
+    sourceColumn: ColumnId,
+  ) => {
+    setDragState({ contractId, sourceColumn });
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnId: ColumnId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragLeaveTimer.current) {
+      clearTimeout(dragLeaveTimer.current);
+      dragLeaveTimer.current = null;
+    }
+    setDragOverColumn(columnId);
+  };
+
+  const handleDragLeave = () => {
+    dragLeaveTimer.current = setTimeout(() => {
+      setDragOverColumn(null);
+    }, 50);
+  };
+
+  // Keep localContracts in sync when sharedContracts changes (e.g. new upload from App)
+  useEffect(() => {
+    setLocalContracts((prev) => {
+      const prevIds = new Set(prev.map((c) => c.id));
+      const newEntries = sharedContracts
+        .filter((c) => !prevIds.has(c.id))
+        .map((c) => toInternalContract(c, true));
+      if (newEntries.length === 0) return prev;
+      // Clear isNew after animation
+      setTimeout(() => {
+        setLocalContracts((lc) =>
+          lc.map((c) => (c.isNew ? { ...c, isNew: false } : c)),
+        );
+      }, 600);
+      return [...newEntries, ...prev];
+    });
+  }, [sharedContracts]);
+
+  const handleDrop = (e: React.DragEvent, targetColumn: ColumnId) => {
+    e.preventDefault();
+    if (!dragState) return;
+    const targetStatus = targetColumn as SharedContract["kanbanStatus"];
+    setLocalContracts((prev) =>
+      prev.map((c) =>
+        c.id === dragState.contractId ? { ...c, status: targetColumn } : c,
+      ),
+    );
+    onKanbanStatusChange?.(dragState.contractId, targetStatus);
+    setDragState(null);
+    setDragOverColumn(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragState(null);
+    setDragOverColumn(null);
+  };
+
+  const handleUpload = (file: File) => {
+    onUpload?.(file);
+  };
+
+  const getColumnContracts = (columnId: ColumnId) =>
+    localContracts.filter((c) => c.status === columnId);
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-8 py-8">
+          {/* Quick Actions */}
+          <div className="max-w-7xl mx-auto mb-10 bg-[#F3EFEB] p-4 rounded-2xl">
+            <div className="flex gap-4">
+              <QuickAction
+                icon={<IconUpload size={20} className="text-blue-600" />}
+                iconBg="bg-blue-50"
+                title="Upload a contract"
+                description="Upload your contract for review by General Legal's attorneys"
+                onClick={() => setUploadModalOpen(true)}
+              />
+              <QuickAction
+                icon={
+                  <div className="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center">
+                    <IconPlus
+                      size={12}
+                      className="text-green-500"
+                      strokeWidth={3}
+                    />
+                  </div>
+                }
+                iconBg="bg-green-50"
+                title="Draft a Contract"
+                description="Generate a new NDA, MSA, and more from scratch"
+              />
+              <QuickAction
+                icon={
+                  <IconMessageCircle size={20} className="text-orange-500" />
+                }
+                iconBg="bg-orange-50"
+                title="Chat with us"
+                description="Ask legal questions about your files"
+                onClick={onNewChat}
+                className="lg:flex-none lg:w-64"
+              />
+            </div>
+          </div>
+          {/* Kanban Board — empty state or board */}
+          {localContracts.length === 0 ? (
+            <div className="flex flex-col items-center px-8 mt-20">
+              {/* Empty state copy */}
+              <div className="flex flex-col items-center text-center mb-10">
+                <IconLayoutColumns
+                  size={40}
+                  strokeWidth={1.25}
+                  className="text-gray-900 mb-4"
+                />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Your contract pipeline starts here
+                </h2>
+                <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
+                  Track your contracts from first draft to signature in one
+                  place. Upload a contract to automatically sort it into the
+                  right state and keep work moving.
+                </p>
+                <button
+                  onClick={() => setUploadModalOpen(true)}
+                  className="mt-6 px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors cursor-pointer"
+                >
+                  Upload your first contract
+                </button>
+              </div>
+
+              {/* Kanban screenshot mockup */}
+              <div className="w-full max-w-2xl">
+                <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white">
+                  <div className="grid grid-cols-3 divide-x divide-gray-200">
+                    {/* Col 1 */}
+                    <div className="p-4">
+                      <div className="text-xs font-semibold text-gray-500 mb-3">
+                        In Review by General Legal
+                      </div>
+                      <div className="space-y-2">
+                        <div className="border border-gray-200 rounded-xl p-3">
+                          <span className="inline-block bg-gray-100 text-gray-500 text-[10px] font-medium px-1.5 py-0.5 rounded mb-1.5">
+                            MSA
+                          </span>
+                          <div className="text-xs font-semibold text-gray-700 mb-1">
+                            Enterprise SaaS Agreement
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-2">
+                            <IconBuilding size={10} />
+                            TechCorp Industries
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] text-blue-400 border-t border-gray-100 pt-2">
+                            <IconLoader2 size={10} className="animate-spin" />
+                            AI Review • Est. ~2 min
+                          </div>
+                        </div>
+                        <div className="border border-gray-100 rounded-xl p-3 opacity-40">
+                          <span className="inline-block bg-gray-100 text-gray-400 text-[10px] font-medium px-1.5 py-0.5 rounded mb-1.5">
+                            MSA
+                          </span>
+                          <div className="text-xs font-semibold text-gray-400">
+                            Enterprise SaaS Agreement
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Col 2 */}
+                    <div className="p-4">
+                      <div className="text-xs font-semibold text-gray-500 mb-3">
+                        Ready for Review
+                      </div>
+                      <div className="border border-gray-200 rounded-xl p-3">
+                        <span className="inline-block bg-gray-100 text-gray-500 text-[10px] font-medium px-1.5 py-0.5 rounded mb-1.5">
+                          MSA
+                        </span>
+                        <div className="text-xs font-semibold text-gray-700 mb-1">
+                          Master Services Agreement
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-2">
+                          <IconBuilding size={10} />
+                          TechCorp Industries
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-green-500 border-t border-gray-100 pt-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                          3 edits to review
+                        </div>
+                      </div>
+                    </div>
+                    {/* Col 3 */}
+                    <div className="p-4">
+                      <div className="text-xs font-semibold text-gray-500 mb-3">
+                        In Negotiation
+                      </div>
+                      <div className="border border-gray-200 rounded-xl p-3">
+                        <span className="inline-block bg-gray-100 text-gray-500 text-[10px] font-medium px-1.5 py-0.5 rounded mb-1.5">
+                          MSA
+                        </span>
+                        <div className="text-xs font-semibold text-gray-700 mb-1 truncate">
+                          Enterprise SaaS Agreement
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-400 mb-2">
+                          <IconBuilding size={10} />
+                          TechCorp Industries
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-amber-500 border-t border-gray-100 pt-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                          Awaiting response
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-center text-xs text-gray-400 mt-3">
+                  Example populated contract pipeline
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="">
+              <div
+                ref={boardRef}
+                className="overflow-x-auto overflow-y-hidden cursor-grab select-none"
+                onMouseDown={handleBoardMouseDown}
+                onMouseMove={handleBoardMouseMove}
+                onMouseUp={handleBoardMouseUp}
+                onMouseLeave={handleBoardMouseLeave}
+              >
+                <div className="max-w-[81rem] mx-auto -mx-4">
+                  <div
+                    className="flex gap-6"
+                    style={{ minWidth: "max-content" }}
+                  >
+                    {COLUMNS.map((column) => (
+                      <div key={column.id} className="w-80 flex-shrink-0">
+                        <KanbanColumn
+                          column={column}
+                          contracts={getColumnContracts(column.id)}
+                          dragState={dragState}
+                          isDragOver={dragOverColumn === column.id}
+                          onDragStart={handleDragStart}
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                          onDragEnd={handleDragEnd}
+                          onCardClick={onCardClick}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <UploadContractModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUpload={handleUpload}
+      />
+    </div>
+  );
+}
+
+export default HomePage;
