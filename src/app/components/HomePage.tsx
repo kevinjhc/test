@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import type { SharedContract } from "../App";
+import type { SharedContract, ClarificationTask } from "../App";
+import { ClarificationModal } from "./ClarificationModal";
 import {
   IconUpload,
   IconPlus,
@@ -7,6 +8,7 @@ import {
   IconBuilding,
   IconLoader2,
   IconLayoutColumns,
+  IconAlertCircle,
 } from "@tabler/icons-react";
 import { UploadContractModal } from "./UploadContractModal";
 import { ContractSideSheet } from "./ContractSideSheet";
@@ -26,6 +28,7 @@ interface Contract {
   isPulsing?: boolean;
   isMovingOut?: boolean;
   isGhost?: boolean;
+  needsClarification?: boolean;
 }
 
 const COLUMNS: { id: ColumnId; label: string }[] = [
@@ -112,16 +115,22 @@ function KanbanCard({
       className={`bg-white border rounded-xl p-4 cursor-pointer select-none transition-all hover:bg-gray-50 hover:shadow-sm ${
         isDragging ? "opacity-40" : "opacity-100"
       } ${contract.isNew ? "animate-in fade-in slide-in-from-top-2 duration-500" : ""} ${
-        contract.isGhost ? "opacity-0 pointer-events-none" : ""
+        contract.isMovingOut
+          ? "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+          : ""
       } ${
-        contract.isPulsing
-          ? "border-blue-300 shadow-[0_0_0_3px_rgba(147,197,253,0.5)]"
-          : "border-gray-200"
+        contract.needsClarification
+          ? "border-amber-300 shadow-[0_0_0_3px_rgba(251,191,36,0.3)]"
+          : contract.isPulsing
+            ? "border-blue-300 shadow-[0_0_0_3px_rgba(147,197,253,0.5)]"
+            : "border-gray-200"
       }`}
       style={
-        contract.isPulsing
-          ? { animation: "pulse-ring 1.8s ease-in-out 3" }
-          : undefined
+        contract.needsClarification
+          ? { animation: "pulse-ring-amber 1.8s ease-in-out infinite" }
+          : contract.isPulsing
+            ? { animation: "pulse-ring 1.8s ease-in-out 3" }
+            : undefined
       }
     >
       <div className="mb-3">
@@ -136,7 +145,13 @@ function KanbanCard({
         <IconBuilding size={13} className="flex-shrink-0" />
         <span>{contract.company}</span>
       </div>
-      {contract.isLoading && (
+      {contract.needsClarification && (
+        <div className="flex items-center gap-1.5 text-xs text-amber-600 border-t border-amber-100 pt-3">
+          <IconAlertCircle size={13} className="flex-shrink-0" />
+          <span>Action required</span>
+        </div>
+      )}
+      {!contract.needsClarification && contract.isLoading && (
         <div className="flex items-center gap-1.5 text-xs text-blue-500 border-t border-gray-100 pt-3">
           <IconLoader2 size={13} className="animate-spin flex-shrink-0" />
           <span>{contract.loadingText}</span>
@@ -261,6 +276,9 @@ export function HomePage({
   const [sideSheetContractId, setSideSheetContractId] = useState<string | null>(
     null,
   );
+  const [clarificationContractId, setClarificationContractId] = useState<
+    string | null
+  >(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
   const dragLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -486,6 +504,70 @@ export function HomePage({
     }
   };
 
+  const mockClarificationTasks: ClarificationTask[] = [
+    {
+      id: "c1",
+      question: "Is this NDA mutual or one-sided?",
+      type: "select",
+      options: [
+        "Mutual (both parties)",
+        "One-sided (counterparty only)",
+        "One-sided (us only)",
+      ],
+    },
+    {
+      id: "c2",
+      question: "What is the intended term of this agreement?",
+      type: "select",
+      options: ["1 year", "2 years", "3 years", "Indefinite"],
+    },
+    {
+      id: "c3",
+      question: "Does this NDA cover any existing IP or trade secrets?",
+      type: "yesno",
+    },
+    {
+      id: "c4",
+      question:
+        "Any specific jurisdiction or governing law you'd like to apply?",
+      type: "text",
+    },
+  ];
+
+  const handleSimulateClarification = useCallback(() => {
+    const reviewCard = localContracts.find((c) => c.status === "review");
+    if (!reviewCard) return;
+    // Mark card as needing clarification
+    setLocalContracts((prev) =>
+      prev.map((c) =>
+        c.id === reviewCard.id
+          ? { ...c, needsClarification: true, isLoading: false }
+          : c,
+      ),
+    );
+    // Auto-open the modal
+    setClarificationContractId(reviewCard.id);
+  }, [localContracts]);
+
+  const handleClarificationSubmit = useCallback(
+    (contractId: string, answers: Record<string, string>) => {
+      setLocalContracts((prev) =>
+        prev.map((c) =>
+          c.id === contractId
+            ? {
+                ...c,
+                needsClarification: false,
+                isLoading: true,
+                loadingText: "AI Review • Est. ~2 min",
+              }
+            : c,
+        ),
+      );
+      setClarificationContractId(null);
+    },
+    [],
+  );
+
   const handleCardClick = (contractId: string) => {
     setSideSheetContractId(contractId);
     onCardClick?.(contractId);
@@ -516,12 +598,17 @@ export function HomePage({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Inject arc keyframes */}
+      {/* Inject arc + amber pulse keyframes */}
       <style>{`
         @keyframes fly-arc {
           0%   { transform: translate(0, 0) scale(1); opacity: 1; }
           40%  { transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5 + var(--arc))) scale(1.04); opacity: 1; }
           100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
+        }
+        @keyframes pulse-ring-amber {
+          0%   { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4); }
+          50%  { box-shadow: 0 0 0 7px rgba(251, 191, 36, 0.1); }
+          100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4); }
         }
       `}</style>
 
@@ -738,14 +825,20 @@ export function HomePage({
             </div>
           )}
 
-          {/* Demo trigger */}
+          {/* Demo triggers */}
           {localContracts.some((c) => c.status === "review") && (
-            <div className="flex justify-center mt-8 pb-8">
+            <div className="flex flex-col items-center gap-2 mt-8 pb-8">
               <button
                 onClick={handleInvite}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors cursor-pointer"
               >
                 Simulate attorney review complete
+              </button>
+              <button
+                onClick={handleSimulateClarification}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-amber-200 text-sm text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
+              >
+                Simulate action required
               </button>
             </div>
           )}
@@ -759,6 +852,24 @@ export function HomePage({
         onView={handleView}
       />
 
+      {clarificationContractId &&
+        (() => {
+          const contract = localContracts.find(
+            (c) => c.id === clarificationContractId,
+          );
+          return contract ? (
+            <ClarificationModal
+              open={true}
+              contractName={contract.name}
+              tasks={mockClarificationTasks}
+              onClose={() => setClarificationContractId(null)}
+              onSubmit={(answers) =>
+                handleClarificationSubmit(clarificationContractId, answers)
+              }
+            />
+          ) : null;
+        })()}
+
       <ContractSideSheet
         contract={
           sideSheetContractId
@@ -766,6 +877,18 @@ export function HomePage({
               null)
             : null
         }
+        clarificationTasks={
+          sideSheetContractId
+            ? localContracts.find((c) => c.id === sideSheetContractId)
+                ?.needsClarification
+              ? mockClarificationTasks
+              : undefined
+            : undefined
+        }
+        onClarificationSubmit={(answers) => {
+          if (sideSheetContractId)
+            handleClarificationSubmit(sideSheetContractId, answers);
+        }}
         onClose={() => setSideSheetContractId(null)}
         onUpload={onOpenUpload}
         onAskQuestion={onAskQuestion}

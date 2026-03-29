@@ -42,7 +42,8 @@ interface SidebarProps {
   onSelectChat?: (id: string, title: string) => void;
   onShowFiles?: () => void;
   onInvite?: () => void;
-  activeView?: "home" | "files" | "chat" | "newChat";
+  onShowSettings?: () => void;
+  activeView?: "home" | "attorney" | "settings" | "files" | "chat" | "newChat";
 }
 
 export function Sidebar({
@@ -53,6 +54,7 @@ export function Sidebar({
   onNewChat,
   onSelectChat,
   onShowFiles,
+  onShowSettings,
   onInvite,
   activeView,
 }: SidebarProps) {
@@ -381,7 +383,10 @@ export function Sidebar({
                   className={`absolute bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 ${isExpanded ? "left-2 right-2" : "left-2 min-w-[160px]"}`}
                 >
                   <button
-                    onClick={() => setIsDropdownOpen(false)}
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      onShowSettings?.();
+                    }}
                     className="w-full flex items-center gap-3 px-3 py-2 hover:bg-[#F3EFEB] transition-colors text-left cursor-pointer"
                   >
                     <IconSettings size={20} className="flex-shrink-0" />

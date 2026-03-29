@@ -17,6 +17,8 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useState, useEffect, useRef } from "react";
+import { ClarificationFields } from "./ClarificationFields";
+import type { ClarificationTask } from "../App";
 
 interface VersionEntry {
   version: string;
@@ -34,6 +36,7 @@ interface Contract {
   lastUpdated: string;
   submitted: string;
   versions?: VersionEntry[];
+  clarificationTasks?: ClarificationTask[];
 }
 
 interface ContractsContentProps {
@@ -44,6 +47,10 @@ interface ContractsContentProps {
   onScrollComplete?: () => void;
   onUpload?: (contractId: string) => void;
   onAskQuestion?: (contractId: string) => void;
+  onClarificationSubmit?: (
+    contractId: string,
+    answers: Record<string, string>,
+  ) => void;
 }
 
 const filters = [
@@ -258,10 +265,15 @@ function ExpandedPanel({
   contract,
   onUpload,
   onAskQuestion,
+  onClarificationSubmit,
 }: {
   contract: Contract;
   onUpload?: (contractId: string) => void;
   onAskQuestion?: (contractId: string) => void;
+  onClarificationSubmit?: (
+    contractId: string,
+    answers: Record<string, string>,
+  ) => void;
 }) {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
 
@@ -271,6 +283,17 @@ function ExpandedPanel({
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
       />
+      {contract.clarificationTasks &&
+        contract.clarificationTasks.length > 0 && (
+          <div className="mb-6">
+            <ClarificationFields
+              tasks={contract.clarificationTasks}
+              onSubmit={(answers) =>
+                onClarificationSubmit?.(contract.id, answers)
+              }
+            />
+          </div>
+        )}
       <div className="flex gap-6">
         {/* Left: Contract Details */}
         <div className="w-56 flex-shrink-0">
@@ -410,6 +433,7 @@ export function ContractsContent({
   onScrollComplete,
   onUpload,
   onAskQuestion,
+  onClarificationSubmit,
 }: ContractsContentProps) {
   const [openContractId, setOpenContractId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -571,6 +595,7 @@ export function ContractsContent({
                     contract={contract}
                     onUpload={onUpload}
                     onAskQuestion={onAskQuestion}
+                    onClarificationSubmit={onClarificationSubmit}
                   />
                 )}
               </div>

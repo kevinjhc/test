@@ -6,6 +6,16 @@ import { ContractsContent } from "./components/ContractsContent";
 import { ChatPage } from "./components/ChatPage";
 import NewChatPage from "./components/NewChatPage";
 import HomePage from "./components/HomePage";
+import { AttorneyHomePage } from "./components/AttorneyHomePage";
+import { SettingsPage } from "./components/SettingsPage";
+
+export interface ClarificationTask {
+  id: string;
+  question: string;
+  type: "text" | "select" | "yesno";
+  options?: string[];
+  answer?: string;
+}
 
 export interface VersionEntry {
   version: string;
@@ -30,6 +40,8 @@ export interface SharedContract {
   isLoading?: boolean;
   loadingText?: string;
   versions?: VersionEntry[];
+  clarificationTasks?: ClarificationTask[];
+  needsClarification?: boolean;
 }
 
 const initialContracts: SharedContract[] = [];
@@ -40,9 +52,9 @@ export default function App() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
-  const [view, setView] = useState<"home" | "files" | "chat" | "newChat">(
-    "home",
-  );
+  const [view, setView] = useState<
+    "home" | "attorney" | "settings" | "files" | "chat" | "newChat"
+  >("home");
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeChatTitle, setActiveChatTitle] = useState<string | null>(null);
   const [scrollToId, setScrollToId] = useState<string | null>(null);
@@ -63,6 +75,10 @@ export default function App() {
   const toggleSidebar = () => setIsSidebarExpanded((v) => !v);
 
   const handleShowHome = () => setView("home");
+
+  const handleShowAttorney = () => setView("attorney");
+
+  const handleShowSettings = () => setView("settings");
 
   const handleNewChat = () => {
     setActiveChatId(null);
@@ -186,6 +202,8 @@ export default function App() {
           onToggle={toggleSidebar}
           isMobile={isMobile}
           onShowHome={handleShowHome}
+          onInvite={handleShowAttorney}
+          onShowSettings={handleShowSettings}
           onNewChat={handleNewChat}
           onSelectChat={handleSelectChat}
           onShowFiles={handleShowFiles}
@@ -208,6 +226,29 @@ export default function App() {
                   handleSelectChat("1", "Contract Review - Q4 2025")
                 }
               />
+            ) : view === "settings" ? (
+              <SettingsPage
+                contracts={contracts}
+                onNewChat={handleNewChat}
+                onUpload={handleUpload}
+                onOpenUpload={handleOpenUpload}
+                onView={handleView}
+                onKanbanStatusChange={handleKanbanStatusChange}
+                onAskQuestion={() =>
+                  handleSelectChat("1", "Contract Review - Q4 2025")
+                }
+              />
+            ) : view === "attorney" ? (
+              <AttorneyHomePage
+                contracts={contracts}
+                onNewChat={handleNewChat}
+                onOpenUpload={handleOpenUpload}
+                onView={handleView}
+                onKanbanStatusChange={handleKanbanStatusChange}
+                onAskQuestion={() =>
+                  handleSelectChat("1", "Contract Review - Q4 2025")
+                }
+              />
             ) : view === "files" ? (
               <ContractsContent
                 contracts={contracts.map((c) => ({
@@ -218,6 +259,7 @@ export default function App() {
                   lastUpdated: c.lastUpdated,
                   submitted: c.submitted,
                   versions: c.versions,
+                  clarificationTasks: c.clarificationTasks,
                 }))}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
@@ -227,6 +269,21 @@ export default function App() {
                 onAskQuestion={() =>
                   handleSelectChat("1", "Contract Review - Q4 2025")
                 }
+                onClarificationSubmit={(contractId, answers) => {
+                  setContracts((prev) =>
+                    prev.map((c) =>
+                      c.id === contractId
+                        ? {
+                            ...c,
+                            needsClarification: false,
+                            clarificationTasks: undefined,
+                            isLoading: true,
+                            loadingText: "AI Review • Est. ~2 min",
+                          }
+                        : c,
+                    ),
+                  );
+                }}
               />
             ) : view === "newChat" ? (
               <NewChatPage />

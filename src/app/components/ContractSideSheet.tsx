@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import type { ClarificationTask } from "../App";
+import { ClarificationFields } from "./ClarificationFields";
 import {
   IconX,
   IconUser,
@@ -216,6 +218,8 @@ interface ContractSideSheetProps {
   onClose: () => void;
   onUpload?: (contractId: string) => void;
   onAskQuestion?: (contractId: string) => void;
+  clarificationTasks?: ClarificationTask[];
+  onClarificationSubmit?: (answers: Record<string, string>) => void;
 }
 
 // ─── Redline Document Viewer ──────────────────────────────────────────────────
@@ -462,6 +466,8 @@ export function ContractSideSheet({
   onClose,
   onUpload,
   onAskQuestion,
+  clarificationTasks,
+  onClarificationSubmit,
 }: ContractSideSheetProps) {
   const [visible, setVisible] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -536,6 +542,14 @@ export function ContractSideSheet({
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">
           <div className="px-6 py-6 space-y-6">
+            {/* Clarification tasks */}
+            {clarificationTasks && clarificationTasks.length > 0 && (
+              <ClarificationFields
+                tasks={clarificationTasks}
+                onSubmit={(answers) => onClarificationSubmit?.(answers)}
+              />
+            )}
+
             {/* Contract Details */}
             <div>
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
