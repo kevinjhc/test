@@ -12,6 +12,7 @@ interface UploadContractModalProps {
   onClose: () => void;
   onUpload: (file: File, description: string) => void;
   onView?: () => void;
+  isNewVersion?: boolean;
 }
 
 type ModalState = "upload" | "success";
@@ -21,6 +22,7 @@ export function UploadContractModal({
   onClose,
   onUpload,
   onView,
+  isNewVersion = false,
 }: UploadContractModalProps) {
   const [modalState, setModalState] = useState<ModalState>("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -92,7 +94,13 @@ export function UploadContractModal({
             <>
               <DialogHeader className="mb-5">
                 <DialogTitle className="text-lg font-semibold">
-                  {file ? "Review a Contract" : "Upload a Contract"}
+                  {file
+                    ? isNewVersion
+                      ? "Review New Version"
+                      : "Review a Contract"
+                    : isNewVersion
+                      ? "Upload a New Version"
+                      : "Upload a Contract"}
                 </DialogTitle>
               </DialogHeader>
 
@@ -204,7 +212,9 @@ export function UploadContractModal({
                   />
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-1">
-                  Your request has been received
+                  {isNewVersion
+                    ? "New version uploaded"
+                    : "Your request has been received"}
                 </h2>
               </div>
 
@@ -230,16 +240,16 @@ export function UploadContractModal({
               <div className="flex items-center justify-end gap-2">
                 <button
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="w-full px-4 py-2 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-gray-700 transition-colors cursor-pointer"
                 >
                   Close
                 </button>
-                <button
+                {/*<button
                   onClick={handleView}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-gray-700 transition-colors cursor-pointer"
                 >
                   View details
-                </button>
+                </button>*/}
               </div>
             </>
           )}

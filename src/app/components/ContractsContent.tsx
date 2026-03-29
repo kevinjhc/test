@@ -14,8 +14,17 @@ import {
   IconClock,
   IconCheck,
   IconLoader2,
+  IconX,
 } from "@tabler/icons-react";
 import { useState, useEffect, useRef } from "react";
+
+interface VersionEntry {
+  version: string;
+  isLatest?: boolean;
+  date: string;
+  author: string;
+  summary: string;
+}
 
 interface Contract {
   id: string;
@@ -24,6 +33,7 @@ interface Contract {
   status: "In Review" | "Awaiting Review" | "Completed";
   lastUpdated: string;
   submitted: string;
+  versions?: VersionEntry[];
 }
 
 interface ContractsContentProps {
@@ -32,6 +42,8 @@ interface ContractsContentProps {
   onFilterChange: (filter: string) => void;
   scrollToId?: string | null;
   onScrollComplete?: () => void;
+  onUpload?: (contractId: string) => void;
+  onAskQuestion?: (contractId: string) => void;
 }
 
 const filters = [
@@ -95,45 +107,60 @@ const mockVersions: VersionEntry[] = [
 function ProgressStepper() {
   const total = mockSteps.length;
   return (
-    <div className="flex items-center w-full">
+    <div className="flex items-center justify-center w-full">
       {mockSteps.map((step, i) => {
-        const isFirst = i === 0;
         const isLast = i === total - 1;
-        const rounded = `${isFirst ? "rounded-l-full" : ""} ${isLast ? "rounded-r-full" : ""}`;
-        const divider = isFirst ? "" : "border-l";
 
-        if (step.status === "complete") {
+        const stepEl = (() => {
+          if (step.status === "complete") {
+            return (
+              <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                <IconCheck
+                  size={13}
+                  className="text-blue-500"
+                  strokeWidth={2.5}
+                />
+                <span className="text-xs font-medium text-gray-700">
+                  {step.label}
+                </span>
+                {step.sublabel && (
+                  <span className="text-xs text-gray-400">{step.sublabel}</span>
+                )}
+              </div>
+            );
+          }
+          if (step.status === "active") {
+            return (
+              <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-300 rounded-full px-4 py-1 whitespace-nowrap">
+                <IconLoader2 size={13} className="text-blue-500 animate-spin" />
+                <span className="text-xs font-semibold text-blue-600">
+                  {step.label}
+                </span>
+                {step.sublabel && (
+                  <span className="text-sm text-blue-400">{step.sublabel}</span>
+                )}
+              </div>
+            );
+          }
           return (
-            <div
-              key={i}
-              className={`grow inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-green-600 text-white text-xs font-medium border-l-white/30 ${rounded} ${divider} border-white/30`}
-            >
-              <IconCheck size={11} strokeWidth={3} />
-              {step.label}
-            </div>
-          );
-        }
-        if (step.status === "active") {
-          return (
-            <div
-              key={i}
-              className={`grow inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-blue-500 text-white text-xs font-medium ${rounded} ${divider} border-white/30`}
-            >
-              <IconLoader2 size={11} className="animate-spin" />
-              {step.label}
+            <div className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <span className="text-xs font-medium text-gray-400">{i + 1}</span>
+              <span className="text-xs font-medium text-gray-400">
+                {step.label}
+              </span>
               {step.sublabel && (
-                <span className="opacity-75">{step.sublabel}</span>
+                <span className="text-sm text-gray-400">{step.sublabel}</span>
               )}
             </div>
           );
-        }
+        })();
+
         return (
-          <div
-            key={i}
-            className={`grow inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-gray-100 text-gray-400 text-xs font-medium ${rounded} ${divider} border-gray-200`}
-          >
-            <IconClock size={11} />
-            {step.label}
+          <div key={i} className="flex items-center min-w-0">
+            {stepEl}
+            {!isLast && (
+              <div className="mx-3 h-px w-4 bg-gray-300 flex-shrink-0" />
+            )}
           </div>
         );
       })}
@@ -141,9 +168,109 @@ function ProgressStepper() {
   );
 }
 
-function ExpandedPanel({ contract }: { contract: Contract }) {
+function RequestEditsModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [description, setDescription] = useState("");
+
+  const handleClose = () => {
+    setDescription("");
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={handleClose} />
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Request more edits
+          </h2>
+          <button
+            onClick={handleClose}
+            className="w-7 h-7 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <IconX size={16} className="text-gray-500" />
+          </button>
+        </div>
+        <div className="mb-5">
+          <label className="block text-sm text-gray-600 mb-1.5">
+            Describe the edits you'd like made
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            autoFocus
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-700 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-gray-200 transition"
+            placeholder="e.g. Please revise the liability cap in Section 4 to $100K..."
+          />
+          <div className="mt-1">
+            <p className="text-sm text-gray-700 mb-1.5">Examples:</p>
+            <ul className="space-y-1">
+              {[
+                "New comments from counterparty",
+                "Clauses you want to adjust",
+                "Questions about their changes",
+              ].map((example) => (
+                <li
+                  key={example}
+                  className="flex items-center gap-2 text-sm text-gray-700"
+                >
+                  <span className="w-1 h-1 rounded-full bg-gray-300 flex-shrink-0" />
+                  {example}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={handleClose}
+            className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={!description.trim()}
+            onClick={handleClose}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              description.trim()
+                ? "bg-gray-900 text-white hover:bg-gray-700 cursor-pointer"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Submit request
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExpandedPanel({
+  contract,
+  onUpload,
+  onAskQuestion,
+}: {
+  contract: Contract;
+  onUpload?: (contractId: string) => void;
+  onAskQuestion?: (contractId: string) => void;
+}) {
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+
   return (
     <div className="bg-[#F9F8F7] border-t border-gray-200 px-6 py-6">
+      <RequestEditsModal
+        open={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+      />
       <div className="flex gap-6">
         {/* Left: Contract Details */}
         <div className="w-56 flex-shrink-0">
@@ -192,11 +319,11 @@ function ExpandedPanel({ contract }: { contract: Contract }) {
 
         {/* Right: Quick Actions */}
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
-            Actions
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
+          <div className="grid grid-col grid-cols-3 gap-3">
+            <button
+              onClick={() => setRequestModalOpen(true)}
+              className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left"
+            >
               <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
                 <IconFileText size={16} className="text-orange-500" />
               </div>
@@ -204,23 +331,10 @@ function ExpandedPanel({ contract }: { contract: Contract }) {
                 Request more edits
               </span>
             </button>
-            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
-              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                <IconCheck size={16} className="text-green-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-900">
-                Approve this version
-              </span>
-            </button>
-            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <IconMessageCircle size={16} className="text-blue-500" />
-              </div>
-              <span className="text-sm font-medium text-gray-900">
-                Ask a question
-              </span>
-            </button>
-            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
+            <button
+              onClick={() => onUpload?.(contract.id)}
+              className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left"
+            >
               <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                 <IconUpload size={16} className="text-gray-600" />
               </div>
@@ -228,11 +342,22 @@ function ExpandedPanel({ contract }: { contract: Contract }) {
                 Upload a new version
               </span>
             </button>
+            <button
+              onClick={() => onAskQuestion?.(contract.id)}
+              className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <IconMessageCircle size={16} className="text-blue-500" />
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                Ask a question
+              </span>
+            </button>
           </div>
 
           {/* Version cards */}
           <div className="space-y-3 mt-4">
-            {mockVersions.map((v) => (
+            {(contract.versions ?? mockVersions).map((v) => (
               <div
                 key={v.version}
                 className="bg-white border border-gray-200 rounded-xl p-4"
@@ -244,11 +369,11 @@ function ExpandedPanel({ contract }: { contract: Contract }) {
                 )}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4 flex-wrap">
-                    <span className="text-lg font-semibold text-gray-900 font-mono">
+                    <span className="text-lg font-semibold text-gray-900 font-mono border border-gray-300 rounded-lg px-2">
                       {v.version}
                     </span>
                     {v.isLatest && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 text-sm font-medium">
+                      <span className="inline-flex items-center px-2 py-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-300 text-sm font-medium">
                         Latest
                       </span>
                     )}
@@ -283,6 +408,8 @@ export function ContractsContent({
   onFilterChange,
   scrollToId,
   onScrollComplete,
+  onUpload,
+  onAskQuestion,
 }: ContractsContentProps) {
   const [openContractId, setOpenContractId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -370,7 +497,7 @@ export function ContractsContent({
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500 px-4 py-3">
               <IconCalendar size={15} />
-              Last Updated
+              <span className="whitespace-nowrap">Last Updated</span>
             </div>
             <div className="px-4 py-3" />
           </div>
@@ -439,7 +566,13 @@ export function ContractsContent({
                 </div>
 
                 {/* Expanded panel */}
-                {isOpen && <ExpandedPanel contract={contract} />}
+                {isOpen && (
+                  <ExpandedPanel
+                    contract={contract}
+                    onUpload={onUpload}
+                    onAskQuestion={onAskQuestion}
+                  />
+                )}
               </div>
             );
           })}

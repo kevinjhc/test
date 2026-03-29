@@ -1,10 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
+import { UploadContractModal } from "./components/UploadContractModal";
 import { Sidebar } from "./components/Sidebar";
 import { Header } from "./components/Header";
 import { ContractsContent } from "./components/ContractsContent";
 import { ChatPage } from "./components/ChatPage";
 import NewChatPage from "./components/NewChatPage";
 import HomePage from "./components/HomePage";
+
+export interface VersionEntry {
+  version: string;
+  isLatest?: boolean;
+  date: string;
+  author: string;
+  summary: string;
+}
 
 export interface SharedContract {
   id: string;
@@ -20,6 +29,7 @@ export interface SharedContract {
   kanbanStatus: "review" | "ready" | "negotiation" | "approved" | "signed";
   isLoading?: boolean;
   loadingText?: string;
+  versions?: VersionEntry[];
 }
 
 const initialContracts: SharedContract[] = [];
@@ -36,6 +46,8 @@ export default function App() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeChatTitle, setActiveChatTitle] = useState<string | null>(null);
   const [scrollToId, setScrollToId] = useState<string | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadTargetId, setUploadTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -73,14 +85,59 @@ export default function App() {
 
   const handleScrollComplete = useCallback(() => setScrollToId(null), []);
 
+  const handleOpenUpload = useCallback((targetId?: string) => {
+    setUploadTargetId(targetId ?? null);
+    setUploadModalOpen(true);
+  }, []);
+
   const handleView = useCallback((contractId: string) => {
     setView("files");
     setScrollToId(contractId);
   }, []);
 
-  const handleUpload = useCallback((file: File) => {
+  const handleUpload = useCallback((file: File, targetId?: string | null) => {
     const now = "Just now";
     const ext = file.name.split(".").pop()?.toUpperCase() ?? "DOC";
+
+    if (targetId) {
+      // New version of an existing contract
+      setContracts((prev) =>
+        prev.map((c) => {
+          if (c.id !== targetId) return c;
+          const prevVersionNum = parseInt(c.version.replace(/\D/g, "")) || 1;
+          const newVersionNum = prevVersionNum + 1;
+          const newVersionStr = `V${newVersionNum}`;
+          const newVersionEntry: VersionEntry = {
+            version: newVersionStr,
+            isLatest: true,
+            date: new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            author: "Kevin Chang",
+            summary: `New version uploaded: ${file.name}`,
+          };
+          const existingVersions = (c.versions ?? []).map((v) => ({
+            ...v,
+            isLatest: false,
+          }));
+          return {
+            ...c,
+            version: newVersionStr,
+            name: file.name,
+            fileStatus: "In Review" as const,
+            lastUpdated: now,
+            kanbanStatus: "review" as const,
+            isLoading: true,
+            loadingText: "AI Review • Est. ~2 min",
+            versions: [newVersionEntry, ...existingVersions],
+          };
+        }),
+      );
+      return;
+    }
+
     const newContract: SharedContract = {
       id: Date.now().toString(),
       name: file.name,
@@ -93,6 +150,19 @@ export default function App() {
       kanbanStatus: "review",
       isLoading: true,
       loadingText: "AI Review • Est. ~2 min",
+      versions: [
+        {
+          version: "V1",
+          isLatest: true,
+          date: new Date().toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+          author: "Kevin Chang",
+          summary: `Initial upload: ${file.name}`,
+        },
+      ],
     };
     setContracts((prev) => [newContract, ...prev]);
   }, []);
@@ -130,10 +200,13 @@ export default function App() {
               <HomePage
                 contracts={contracts}
                 onNewChat={handleNewChat}
-                onCardClick={handleCardClick}
                 onUpload={handleUpload}
+                onOpenUpload={handleOpenUpload}
                 onView={handleView}
                 onKanbanStatusChange={handleKanbanStatusChange}
+                onAskQuestion={() =>
+                  handleSelectChat("1", "Contract Review - Q4 2025")
+                }
               />
             ) : view === "files" ? (
               <ContractsContent
@@ -144,11 +217,16 @@ export default function App() {
                   status: c.fileStatus,
                   lastUpdated: c.lastUpdated,
                   submitted: c.submitted,
+                  versions: c.versions,
                 }))}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
                 scrollToId={scrollToId}
                 onScrollComplete={handleScrollComplete}
+                onUpload={(contractId) => handleOpenUpload(contractId)}
+                onAskQuestion={() =>
+                  handleSelectChat("1", "Contract Review - Q4 2025")
+                }
               />
             ) : view === "newChat" ? (
               <NewChatPage />
@@ -158,6 +236,26 @@ export default function App() {
           </div>
         </main>
       </div>
+
+      <UploadContractModal
+        open={uploadModalOpen}
+        onClose={() => {
+          setUploadModalOpen(false);
+          setUploadTargetId(null);
+        }}
+        isNewVersion={!!uploadTargetId}
+        onUpload={(file) => {
+          handleUpload(file, uploadTargetId);
+        }}
+        onView={() => {
+          setUploadModalOpen(false);
+          const target = uploadTargetId
+            ? contracts.find((c) => c.id === uploadTargetId)
+            : contracts[0];
+          if (target) handleView(target.id);
+          setUploadTargetId(null);
+        }}
+      />
     </div>
   );
 }

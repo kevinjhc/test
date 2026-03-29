@@ -9,6 +9,7 @@ import {
   IconLayoutColumns,
 } from "@tabler/icons-react";
 import { UploadContractModal } from "./UploadContractModal";
+import { ContractSideSheet } from "./ContractSideSheet";
 
 type ColumnId = "review" | "ready" | "negotiation" | "approved" | "signed";
 
@@ -220,7 +221,9 @@ interface HomePageProps {
   onNewChat?: () => void;
   onCardClick?: (contractId: string) => void;
   onUpload?: (file: File) => void;
+  onOpenUpload?: (contractId?: string) => void;
   onView?: (contractId: string) => void;
+  onAskQuestion?: (contractId: string) => void;
   onKanbanStatusChange?: (
     id: string,
     status: SharedContract["kanbanStatus"],
@@ -245,7 +248,9 @@ export function HomePage({
   onNewChat,
   onCardClick,
   onUpload,
+  onOpenUpload,
   onView,
+  onAskQuestion,
   onKanbanStatusChange,
 }: HomePageProps) {
   const [localContracts, setLocalContracts] = useState<Contract[]>(() =>
@@ -253,6 +258,9 @@ export function HomePage({
   );
   const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [sideSheetContractId, setSideSheetContractId] = useState<string | null>(
+    null,
+  );
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
   const dragLeaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -325,21 +333,38 @@ export function HomePage({
     }, 50);
   };
 
-  // Keep localContracts in sync when sharedContracts changes (e.g. new upload from App)
+  // Keep localContracts in sync when sharedContracts changes (new uploads or version updates)
   useEffect(() => {
     setLocalContracts((prev) => {
-      const prevIds = new Set(prev.map((c) => c.id));
-      const newEntries = sharedContracts
-        .filter((c) => !prevIds.has(c.id))
-        .map((c) => toInternalContract(c, true));
-      if (newEntries.length === 0) return prev;
+      const prevMap = new Map(prev.map((c) => [c.id, c]));
+
+      // Existing contracts whose kanbanStatus changed (e.g. new version resets to "review")
+      const updated = prev.map((local) => {
+        const shared = sharedContracts.find((c) => c.id === local.id);
+        if (!shared) return local;
+        if (shared.kanbanStatus !== local.status) {
+          return {
+            ...local,
+            status: shared.kanbanStatus,
+            isLoading: shared.isLoading,
+            loadingText: shared.loadingText,
+            name: shared.name,
+            isNew: true,
+          };
+        }
+        return local;
+      });
+
       // Clear isNew after animation
-      setTimeout(() => {
-        setLocalContracts((lc) =>
-          lc.map((c) => (c.isNew ? { ...c, isNew: false } : c)),
-        );
-      }, 600);
-      return [...newEntries, ...prev];
+      if (updated.some((c) => c.isNew)) {
+        setTimeout(() => {
+          setLocalContracts((lc) =>
+            lc.map((c) => (c.isNew ? { ...c, isNew: false } : c)),
+          );
+        }, 600);
+      }
+
+      return updated;
     });
   }, [sharedContracts]);
 
@@ -365,8 +390,32 @@ export function HomePage({
   const lastUploadedId = useRef<string | null>(null);
 
   const handleUpload = (file: File) => {
+    const now = "Just now";
+    const ext = file.name.split(".").pop()?.toUpperCase() ?? "DOC";
+    const newContract: SharedContract = {
+      id: Date.now().toString(),
+      name: file.name,
+      version: "V1",
+      fileStatus: "In Review",
+      lastUpdated: now,
+      submitted: now,
+      type: ext,
+      company: "Client Name",
+      kanbanStatus: "review",
+      isLoading: true,
+      loadingText: "AI Review • Est. ~2 min",
+    };
+    // Add directly to local kanban with animation
+    setLocalContracts((prev) => {
+      setTimeout(() => {
+        setLocalContracts((lc) =>
+          lc.map((c) => (c.isNew ? { ...c, isNew: false } : c)),
+        );
+      }, 600);
+      return [toInternalContract(newContract as SharedContract, true), ...prev];
+    });
+    // Also notify App so the files page gets updated
     onUpload?.(file);
-    lastUploadedId.current = null;
   };
 
   const handleInvite = useCallback(() => {
@@ -431,11 +480,15 @@ export function HomePage({
   }, [localContracts]);
 
   const handleView = () => {
-    // The most recently added contract is at the front of sharedContracts
     const latest = sharedContracts[0];
     if (latest) {
       onView?.(latest.id);
     }
+  };
+
+  const handleCardClick = (contractId: string) => {
+    setSideSheetContractId(contractId);
+    onCardClick?.(contractId);
   };
 
   // Build arc keyframes dynamically based on measured rects
@@ -675,7 +728,7 @@ export function HomePage({
                           onDragLeave={handleDragLeave}
                           onDrop={handleDrop}
                           onDragEnd={handleDragEnd}
-                          onCardClick={onCardClick}
+                          onCardClick={handleCardClick}
                         />
                       </div>
                     ))}
@@ -704,6 +757,18 @@ export function HomePage({
         onClose={() => setUploadModalOpen(false)}
         onUpload={handleUpload}
         onView={handleView}
+      />
+
+      <ContractSideSheet
+        contract={
+          sideSheetContractId
+            ? (sharedContracts.find((c) => c.id === sideSheetContractId) ??
+              null)
+            : null
+        }
+        onClose={() => setSideSheetContractId(null)}
+        onUpload={onOpenUpload}
+        onAskQuestion={onAskQuestion}
       />
     </div>
   );
