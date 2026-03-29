@@ -22,6 +22,9 @@ interface Contract {
   loadingText?: string;
   isNew?: boolean;
   animatingIn?: boolean;
+  isPulsing?: boolean;
+  isMovingOut?: boolean;
+  isGhost?: boolean;
 }
 
 const COLUMNS: { id: ColumnId; label: string }[] = [
@@ -35,6 +38,12 @@ const COLUMNS: { id: ColumnId; label: string }[] = [
 interface DragState {
   contractId: string;
   sourceColumn: ColumnId;
+}
+
+interface FlyingCard {
+  contract: Contract;
+  startRect: DOMRect;
+  endRect: DOMRect;
 }
 
 interface QuickActionProps {
@@ -98,9 +107,21 @@ function KanbanCard({
       draggable
       onDragStart={(e) => onDragStart(e, contract.id, contract.status)}
       onClick={() => onCardClick?.(contract.id)}
-      className={`bg-white border border-gray-200 rounded-xl p-4 cursor-pointer select-none transition-all hover:bg-gray-50 hover:shadow-sm ${
+      data-card-id={contract.id}
+      className={`bg-white border rounded-xl p-4 cursor-pointer select-none transition-all hover:bg-gray-50 hover:shadow-sm ${
         isDragging ? "opacity-40" : "opacity-100"
-      } ${contract.isNew ? "animate-in fade-in slide-in-from-top-2 duration-500" : ""}`}
+      } ${contract.isNew ? "animate-in fade-in slide-in-from-top-2 duration-500" : ""} ${
+        contract.isGhost ? "opacity-0 pointer-events-none" : ""
+      } ${
+        contract.isPulsing
+          ? "border-blue-300 shadow-[0_0_0_3px_rgba(147,197,253,0.5)]"
+          : "border-gray-200"
+      }`}
+      style={
+        contract.isPulsing
+          ? { animation: "pulse-ring 1.8s ease-in-out 3" }
+          : undefined
+      }
     >
       <div className="mb-3">
         <span className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded-md">
@@ -171,6 +192,7 @@ function KanbanColumn({
         onDragLeave={onDragLeave}
         onDrop={(e) => onDrop(e, column.id)}
         onDragEnd={onDragEnd}
+        data-column-id={column.id}
         className={`flex-1 min-h-32 rounded-xl transition-colors p-2 ${
           isDragOver
             ? "bg-blue-50 border-2 border-dashed border-blue-300"
@@ -198,6 +220,7 @@ interface HomePageProps {
   onNewChat?: () => void;
   onCardClick?: (contractId: string) => void;
   onUpload?: (file: File) => void;
+  onView?: (contractId: string) => void;
   onKanbanStatusChange?: (
     id: string,
     status: SharedContract["kanbanStatus"],
@@ -222,11 +245,13 @@ export function HomePage({
   onNewChat,
   onCardClick,
   onUpload,
+  onView,
   onKanbanStatusChange,
 }: HomePageProps) {
   const [localContracts, setLocalContracts] = useState<Contract[]>(() =>
     sharedContracts.map((c) => toInternalContract(c)),
   );
+  const [flyingCard, setFlyingCard] = useState<FlyingCard | null>(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null);
@@ -337,15 +362,141 @@ export function HomePage({
     setDragOverColumn(null);
   };
 
+  const lastUploadedId = useRef<string | null>(null);
+
   const handleUpload = (file: File) => {
     onUpload?.(file);
+    lastUploadedId.current = null;
   };
+
+  const handleInvite = useCallback(() => {
+    const reviewCard = localContracts.find((c) => c.status === "review");
+    if (!reviewCard) return;
+
+    // Measure the source card and target column
+    const cardEl = document.querySelector(`[data-card-id="${reviewCard.id}"]`);
+    const targetCol = document.querySelector(`[data-column-id="ready"]`);
+    if (!cardEl || !targetCol) return;
+
+    const startRect = cardEl.getBoundingClientRect();
+    const targetRect = targetCol.getBoundingClientRect();
+
+    // Estimate where the card will land in the target column (top of drop zone)
+    const endRect = new DOMRect(
+      targetRect.left + 8,
+      targetRect.top + 8,
+      startRect.width,
+      startRect.height,
+    );
+
+    // Ghost the real card and launch the clone
+    setLocalContracts((prev) =>
+      prev.map((c) => (c.id === reviewCard.id ? { ...c, isGhost: true } : c)),
+    );
+    setFlyingCard({ contract: reviewCard, startRect, endRect });
+
+    // After arc animation (700ms), move real card and stop flying
+    setTimeout(() => {
+      setFlyingCard(null);
+      setLocalContracts((prev) =>
+        prev.map((c) =>
+          c.id === reviewCard.id
+            ? {
+                ...c,
+                isGhost: false,
+                status: "ready",
+                isNew: true,
+                isPulsing: false,
+              }
+            : c,
+        ),
+      );
+      setTimeout(() => {
+        setLocalContracts((prev) =>
+          prev.map((c) =>
+            c.id === reviewCard.id
+              ? { ...c, isNew: false, isPulsing: true }
+              : c,
+          ),
+        );
+        setTimeout(() => {
+          setLocalContracts((prev) =>
+            prev.map((c) =>
+              c.id === reviewCard.id ? { ...c, isPulsing: false } : c,
+            ),
+          );
+        }, 5400);
+      }, 50);
+    }, 720);
+  }, [localContracts]);
+
+  const handleView = () => {
+    // The most recently added contract is at the front of sharedContracts
+    const latest = sharedContracts[0];
+    if (latest) {
+      onView?.(latest.id);
+    }
+  };
+
+  // Build arc keyframes dynamically based on measured rects
+  const flyingStyle = useCallback((fc: FlyingCard): React.CSSProperties => {
+    const dx = fc.endRect.left - fc.startRect.left;
+    const dy = fc.endRect.top - fc.startRect.top;
+    // We inject a <style> tag dynamically — see below
+    return {
+      position: "fixed",
+      top: fc.startRect.top,
+      left: fc.startRect.left,
+      width: fc.startRect.width,
+      height: fc.startRect.height,
+      zIndex: 9999,
+      pointerEvents: "none",
+      animation: "fly-arc 720ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards",
+      "--dx": `${dx}px`,
+      "--dy": `${dy}px`,
+      "--arc": `${-Math.abs(dx) * 0.35}px`,
+    } as React.CSSProperties;
+  }, []);
 
   const getColumnContracts = (columnId: ColumnId) =>
     localContracts.filter((c) => c.status === columnId);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      {/* Inject arc keyframes */}
+      <style>{`
+        @keyframes fly-arc {
+          0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+          40%  { transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5 + var(--arc))) scale(1.04); opacity: 1; }
+          100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Flying card clone */}
+      {flyingCard && (
+        <div style={flyingStyle(flyingCard)}>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-lg h-full">
+            <div className="mb-3">
+              <span className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded-md">
+                {flyingCard.contract.type}
+              </span>
+            </div>
+            <div className="font-semibold text-gray-900 text-sm mb-2 leading-snug line-clamp-2">
+              {flyingCard.contract.name}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+              <IconBuilding size={13} className="flex-shrink-0" />
+              <span>{flyingCard.contract.company}</span>
+            </div>
+            {flyingCard.contract.isLoading && (
+              <div className="flex items-center gap-1.5 text-xs text-blue-500 border-t border-gray-100 pt-3">
+                <IconLoader2 size={13} className="animate-spin flex-shrink-0" />
+                <span>{flyingCard.contract.loadingText}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto">
         <div className="px-8 py-8">
           {/* Quick Actions */}
@@ -533,6 +684,18 @@ export function HomePage({
               </div>
             </div>
           )}
+
+          {/* Demo trigger */}
+          {localContracts.some((c) => c.status === "review") && (
+            <div className="flex justify-center mt-8 pb-8">
+              <button
+                onClick={handleInvite}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                Simulate attorney review complete
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -540,6 +703,7 @@ export function HomePage({
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
         onUpload={handleUpload}
+        onView={handleView}
       />
     </div>
   );

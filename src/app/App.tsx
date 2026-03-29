@@ -73,6 +73,11 @@ export default function App() {
 
   const handleScrollComplete = useCallback(() => setScrollToId(null), []);
 
+  const handleView = useCallback((contractId: string) => {
+    setView("files");
+    setScrollToId(contractId);
+  }, []);
+
   const handleUpload = useCallback((file: File) => {
     const now = "Just now";
     const ext = file.name.split(".").pop()?.toUpperCase() ?? "DOC";
@@ -127,6 +132,7 @@ export default function App() {
                 onNewChat={handleNewChat}
                 onCardClick={handleCardClick}
                 onUpload={handleUpload}
+                onView={handleView}
                 onKanbanStatusChange={handleKanbanStatusChange}
               />
             ) : view === "files" ? (

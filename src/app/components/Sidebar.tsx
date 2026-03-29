@@ -39,9 +39,9 @@ interface SidebarProps {
   isMobile?: boolean;
   onShowHome?: () => void;
   onNewChat?: () => void;
-
   onSelectChat?: (id: string, title: string) => void;
   onShowFiles?: () => void;
+  onInvite?: () => void;
   activeView?: "home" | "files" | "chat" | "newChat";
 }
 
@@ -51,9 +51,9 @@ export function Sidebar({
   isMobile = false,
   onShowHome,
   onNewChat,
-
   onSelectChat,
   onShowFiles,
+  onInvite,
   activeView,
 }: SidebarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -346,7 +346,10 @@ export function Sidebar({
           {/* Invite button */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className="w-full flex items-center border-t border-gray-200 hover:bg-[#F3EFEB] transition-colors px-3 py-2 cursor-pointer">
+              <button
+                onClick={() => onInvite?.()}
+                className="w-full flex items-center border-t border-gray-200 hover:bg-[#F3EFEB] transition-colors px-3 py-2 cursor-pointer"
+              >
                 <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
                   <IconUserPlus size={20} />
                 </div>
