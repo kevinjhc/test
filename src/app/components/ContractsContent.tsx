@@ -13,6 +13,7 @@ import {
   IconMessageCircle,
   IconClock,
   IconCheck,
+  IconLoader2,
 } from "@tabler/icons-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -68,7 +69,7 @@ interface VersionEntry {
 
 const mockVersions: VersionEntry[] = [
   {
-    version: "Version 3",
+    version: "V3",
     isLatest: true,
     date: "Mar 23, 2026",
     author: "Sarah Chen",
@@ -76,14 +77,14 @@ const mockVersions: VersionEntry[] = [
       "Latest revision addressing liability caps and indemnification clauses. Legal team reduced liability exposure from $500K to $250K and clarified IP ownership terms.",
   },
   {
-    version: "Version 2",
+    version: "V2",
     date: "Mar 10, 2026",
     author: "Michael Torres",
     summary:
       "Second draft incorporating counterparty feedback on payment terms. Extended payment window from 30 to 45 days and added milestone-based payment schedule.",
   },
   {
-    version: "Version 1",
+    version: "V1",
     date: "Feb 20, 2026",
     author: "Sarah Chen",
     summary:
@@ -91,72 +92,51 @@ const mockVersions: VersionEntry[] = [
   },
 ];
 
-function StepIcon({ status }: { status: StepStatus }) {
-  if (status === "complete") {
-    return (
-      <div className="w-8 h-8 rounded-full bg-green-600 border-2 border-green-600 flex items-center justify-center flex-shrink-0 z-10">
-        <IconCheck size={16} stroke={3} className="text-white" />
-      </div>
-    );
-  }
-  if (status === "active") {
-    return (
-      <div className="w-8 h-8 rounded-full bg-white border-2 border-green-600 flex items-center justify-center flex-shrink-0 z-10">
-        <div className="w-3 h-3 rounded-full bg-green-600" />
-      </div>
-    );
-  }
-  return (
-    <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center flex-shrink-0 z-10" />
-  );
-}
-
 function ProgressStepper() {
+  const total = mockSteps.length;
   return (
-    <div className="relative flex items-start justify-between px-2">
-      {/* Connector lines */}
-      <div className="absolute top-4 left-0 right-0 flex px-6" aria-hidden>
-        {mockSteps.slice(0, -1).map((step, i) => {
-          const nextStep = mockSteps[i + 1];
-          const isGreen =
-            step.status === "complete" &&
-            (nextStep.status === "complete" || nextStep.status === "active");
+    <div className="flex items-center w-full">
+      {mockSteps.map((step, i) => {
+        const isFirst = i === 0;
+        const isLast = i === total - 1;
+        const rounded = `${isFirst ? "rounded-l-full" : ""} ${isLast ? "rounded-r-full" : ""}`;
+        const divider = isFirst ? "" : "border-l";
+
+        if (step.status === "complete") {
           return (
             <div
               key={i}
-              className={`flex-1 h-0.5 mt-0 ${isGreen ? "bg-green-600" : "bg-gray-200"}`}
-            />
-          );
-        })}
-      </div>
-
-      {mockSteps.map((step, i) => (
-        <div key={i} className="flex flex-col items-center gap-2 flex-1">
-          <StepIcon status={step.status} />
-          <div className="text-center">
-            <div
-              className={`text-xs font-semibold ${
-                step.status === "active"
-                  ? "text-green-600"
-                  : step.status === "complete"
-                    ? "text-gray-900"
-                    : "text-gray-400"
-              }`}
+              className={`grow inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-green-600 text-white text-xs font-medium border-l-white/30 ${rounded} ${divider} border-white/30`}
             >
+              <IconCheck size={11} strokeWidth={3} />
               {step.label}
             </div>
-            {step.sublabel && (
-              <div
-                className={`text-xs ${
-                  step.status === "active" ? "text-green-600" : "text-gray-400"
-                }`}
-              >
-                {step.sublabel}
-              </div>
-            )}
+          );
+        }
+        if (step.status === "active") {
+          return (
+            <div
+              key={i}
+              className={`grow inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-blue-500 text-white text-xs font-medium ${rounded} ${divider} border-white/30`}
+            >
+              <IconLoader2 size={11} className="animate-spin" />
+              {step.label}
+              {step.sublabel && (
+                <span className="opacity-75">{step.sublabel}</span>
+              )}
+            </div>
+          );
+        }
+        return (
+          <div
+            key={i}
+            className={`grow inline-flex items-center justify-center gap-1.5 px-4 h-8 bg-gray-100 text-gray-400 text-xs font-medium ${rounded} ${divider} border-gray-200`}
+          >
+            <IconClock size={11} />
+            {step.label}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -164,11 +144,6 @@ function ProgressStepper() {
 function ExpandedPanel({ contract }: { contract: Contract }) {
   return (
     <div className="bg-[#F9F8F7] border-t border-gray-200 px-6 py-6">
-      {/* Progress stepper */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <ProgressStepper />
-      </div>
-
       <div className="flex gap-6">
         {/* Left: Contract Details */}
         <div className="w-56 flex-shrink-0">
@@ -215,24 +190,65 @@ function ExpandedPanel({ contract }: { contract: Contract }) {
           </div>
         </div>
 
-        {/* Right: Version History */}
+        {/* Right: Quick Actions */}
         <div className="flex-1 min-w-0">
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">
-            Version History
+            Actions
           </div>
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
+              <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
+                <IconFileText size={16} className="text-orange-500" />
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                Request more edits
+              </span>
+            </button>
+            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
+              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                <IconCheck size={16} className="text-green-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                Approve this version
+              </span>
+            </button>
+            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <IconMessageCircle size={16} className="text-blue-500" />
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                Ask a question
+              </span>
+            </button>
+            <button className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left">
+              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <IconUpload size={16} className="text-gray-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                Upload a new version
+              </span>
+            </button>
+          </div>
+
+          {/* Version cards */}
+          <div className="space-y-3 mt-4">
             {mockVersions.map((v) => (
               <div
                 key={v.version}
                 className="bg-white border border-gray-200 rounded-xl p-4"
               >
+                {v.isLatest && (
+                  <div className="mb-4 pb-4 border-b border-gray-100">
+                    <ProgressStepper />
+                  </div>
+                )}
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-gray-900">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span className="text-lg font-semibold text-gray-900 font-mono">
                       {v.version}
                     </span>
                     {v.isLatest && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-medium">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 text-sm font-medium">
                         Latest
                       </span>
                     )}
@@ -245,11 +261,11 @@ function ExpandedPanel({ contract }: { contract: Contract }) {
                     Download
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-gray-400 italic mb-2">
+                <div className="flex items-center gap-1.5 text-sm text-gray-400 italic mt-2 mb-1">
                   <IconClock size={12} />
                   Summary of changes from previous version
                 </div>
-                <p className="text-sm text-gray-700 leading-relaxed">
+                <p className="text-base text-gray-700 leading-relaxed">
                   {v.summary}
                 </p>
               </div>
