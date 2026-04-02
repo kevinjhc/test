@@ -817,7 +817,7 @@ function VersionList({
         <>
           <button
             onClick={() => setShowOlder((s) => !s)}
-            className="flex items-center gap-1.5 text-base text-gray-400 hover:text-gray-600 transition-colors cursor-pointer pl-1"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer pl-1"
           >
             {showOlder ? "Hide" : "Show"} {older.length} older{" "}
             {older.length === 1 ? "version" : "versions"}
@@ -860,7 +860,7 @@ function ExpandedPanel({
   const [slackModalOpen, setSlackModalOpen] = useState(false);
 
   return (
-    <div className="bg-[#F9F8F7] px-6 py-6">
+    <div className="bg-[#F9F8F7] px-4 py-4 rounded-b-2xl">
       <RequestEditsModal
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
@@ -882,7 +882,7 @@ function ExpandedPanel({
         )}
 
       <div className="flex-1 min-w-0">
-        <div className="sticky top-0 z-10 bg-[#F9F8F7] pb-3 grid grid-col grid-cols-3 gap-3">
+        <div className="sticky top-0 z-10 bg-[#F9F8F7] grid grid-col grid-cols-3 gap-4">
           <button
             onClick={() => setRequestModalOpen(true)}
             className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer text-left"
@@ -982,41 +982,43 @@ export function ContractsContent({
       />
 
       {/* Quick Actions */}
-      <div className="max-w-5xl mx-auto px-6 pt-8 pb-4">
-        <div className="bg-[#F3EFEB] p-4 rounded-2xl">
-          <div className="flex gap-4">
-            <button
-              onClick={() => setNewContractModalOpen(true)}
-              className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
-            >
-              <div className="flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 bg-blue-50">
-                <IconPlus size={20} className="text-blue-600" />
-              </div>
-              <div className="min-w-0">
-                <div className="font-semibold text-gray-900 text-sm lg:text-base">
-                  New Contract
+      <div className="px-6">
+        <div className="max-w-5xl mx-auto pt-8 pb-4">
+          <div className="bg-[#F3EFEB] p-4 rounded-2xl">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setNewContractModalOpen(true)}
+                className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
+              >
+                <div className="flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 bg-blue-50">
+                  <IconPlus size={20} className="text-blue-600" />
                 </div>
-                <div className="hidden lg:block text-sm text-gray-500">
-                  Upload or draft a contract with General Legal
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 text-sm lg:text-base">
+                    New Contract
+                  </div>
+                  <div className="hidden lg:block text-sm text-gray-500">
+                    Upload or draft a contract with General Legal
+                  </div>
                 </div>
-              </div>
-            </button>
-            <button
-              onClick={onNewChat}
-              className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
-            >
-              <div className="flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 bg-orange-50">
-                <IconMessageCircle size={20} className="text-orange-500" />
-              </div>
-              <div className="min-w-0">
-                <div className="font-semibold text-gray-900 text-sm lg:text-base">
-                  Chat with us
+              </button>
+              <button
+                onClick={onNewChat}
+                className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
+              >
+                <div className="flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 bg-orange-50">
+                  <IconMessageCircle size={20} className="text-orange-500" />
                 </div>
-                <div className="hidden lg:block text-sm text-gray-500">
-                  Ask legal questions about your files
+                <div className="min-w-0">
+                  <div className="font-semibold text-gray-900 text-sm lg:text-base">
+                    Chat with us
+                  </div>
+                  <div className="hidden lg:block text-sm text-gray-500">
+                    Ask legal questions about your files
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1136,21 +1138,23 @@ export function ContractsContent({
       {contracts.length > 0 && (
         <>
           {/* Filter tabs */}
-          <div className="pb-6 max-w-5xl mx-auto px-6">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {filters.map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => onFilterChange(filter)}
-                  className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors border border-gray-200 cursor-pointer ${
-                    activeFilter === filter
-                      ? "bg-black text-white border-black"
-                      : "text-gray-900 hover:bg-[#F5F2EF]"
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
+          <div className="px-6">
+            <div className="pb-6 max-w-5xl mx-auto">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                {filters.map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => onFilterChange(filter)}
+                    className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors border border-gray-200 cursor-pointer ${
+                      activeFilter === filter
+                        ? "bg-black text-white border-black"
+                        : "text-gray-900 hover:bg-[#F5F2EF]"
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="px-6">
@@ -1200,7 +1204,9 @@ export function ContractsContent({
                     }}
                   >
                     {/* Main row — narrow */}
-                    <div className="max-w-5xl mx-auto border-l border-r border-gray-200">
+                    <div
+                      className={`mx-auto border-l border-r border-gray-200 ${isOpen ? " bg-white max-w-6xl border-t -mt-[1px] overflow-hidden rounded-t-2xl" : "max-w-5xl"} ${isLast && !isOpen ? "border-b rounded-b-2xl overflow-hidden" : ""}`}
+                    >
                       <div
                         className={`grid grid-cols-[160px_1fr_110px_140px_140px_96px] transition-colors cursor-pointer ${!isLast || isOpen ? "border-b border-gray-200" : ""} ${isLast && !isOpen ? "rounded-b-2xl overflow-hidden" : ""} ${
                           getTableStatus(contract) === "action-required"
@@ -1211,10 +1217,10 @@ export function ContractsContent({
                         }`}
                         onClick={() => toggleOpen(contract.id)}
                       >
-                        <div className="flex items-center px-4 py-4">
+                        <div className="flex items-center px-4 py-2">
                           <TableStatusBadge status={getTableStatus(contract)} />
                         </div>
-                        <div className="flex items-center gap-3 px-4 py-4">
+                        <div className="flex items-center gap-3 px-4 py-2">
                           <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
                             <IconFileTypeDocx
                               size={18}
@@ -1225,18 +1231,18 @@ export function ContractsContent({
                             {contract.name}
                           </span>
                         </div>
-                        <div className="flex items-center px-4 py-4">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-300 text-xs text-gray-600 whitespace-nowrap">
+                        <div className="flex items-center px-4 py-2">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full border border-gray-300 text-xs text-gray-600 whitespace-nowrap font-mono font-bold bg-white">
                             {contract.version}
                           </span>
                         </div>
-                        <div className="flex items-center px-4 py-4 text-sm text-gray-600">
+                        <div className="flex items-center px-4 py-2 text-sm text-gray-600">
                           {contract.submitted}
                         </div>
-                        <div className="flex items-center px-4 py-4 text-sm text-gray-600">
+                        <div className="flex items-center px-4 py-2 text-sm text-gray-600">
                           {contract.lastUpdated}
                         </div>
-                        <div className="flex items-center justify-center gap-2 px-4 py-4">
+                        <div className="flex items-center justify-center gap-2 px-4 py-3">
                           <button
                             className="p-1 rounded hover:bg-[#F5F2EF] transition-colors cursor-pointer"
                             onClick={(e) => {
@@ -1260,7 +1266,7 @@ export function ContractsContent({
                     {/* Expanded panel — wider */}
                     {isOpen && (
                       <div
-                        className={`max-w-6xl -mt-[1px] mx-auto rounded-3xl overflow-hidden border border-gray-200 ${isLast ? "rounded-b-2xl overflow-hidden" : ""}`}
+                        className={`max-w-6xl -mt-[1px] mx-auto rounded-b-3xl overflow-hidden border border-gray-200 ${isLast ? "rounded-b-2xl" : ""}`}
                       >
                         <ExpandedPanel
                           contract={contract}
@@ -1269,11 +1275,6 @@ export function ContractsContent({
                           onClarificationSubmit={onClarificationSubmit}
                         />
                       </div>
-                    )}
-
-                    {/* Close bottom border on last row when not expanded */}
-                    {isLast && !isOpen && (
-                      <div className="max-w-5xl mx-auto border-l border-r border-gray-200 rounded-b-2xl h-0" />
                     )}
                   </div>
                 );
