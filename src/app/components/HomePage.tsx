@@ -239,6 +239,7 @@ interface HomePageProps {
   onOpenUpload?: (contractId?: string) => void;
   onView?: (contractId: string) => void;
   onAskQuestion?: (contractId: string) => void;
+  onSeed?: () => void;
   onKanbanStatusChange?: (
     id: string,
     status: SharedContract["kanbanStatus"],
@@ -266,6 +267,7 @@ export function HomePage({
   onOpenUpload,
   onView,
   onAskQuestion,
+  onSeed,
   onKanbanStatusChange,
 }: HomePageProps) {
   const [localContracts, setLocalContracts] = useState<Contract[]>(() =>
@@ -826,6 +828,16 @@ export function HomePage({
           )}
 
           {/* Demo triggers */}
+          {localContracts.length === 0 && onSeed && (
+            <div className="flex justify-center mt-8 pb-4">
+              <button
+                onClick={onSeed}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                Seed with dummy contracts
+              </button>
+            </div>
+          )}
           {localContracts.some((c) => c.status === "review") && (
             <div className="flex flex-col items-center gap-2 mt-8 pb-8">
               <button

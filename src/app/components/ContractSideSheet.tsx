@@ -550,45 +550,6 @@ export function ContractSideSheet({
               />
             )}
 
-            {/* Contract Details */}
-            <div>
-              <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                Contract Details
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <IconUser size={14} className="text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-400 w-24 flex-shrink-0">
-                    Counterparty
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    Client Name
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <IconFileText
-                    size={14}
-                    className="text-gray-400 flex-shrink-0"
-                  />
-                  <span className="text-xs text-gray-400 w-24 flex-shrink-0">
-                    Contract Type
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {contract.type}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <IconUser size={14} className="text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-400 w-24 flex-shrink-0">
-                    Owner
-                  </span>
-                  <span className="text-sm font-medium text-gray-900">
-                    Sarah Chen
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* Quick Actions */}
             <div>
               <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">

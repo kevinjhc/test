@@ -5,9 +5,9 @@ import { Header } from "./components/Header";
 import { ContractsContent } from "./components/ContractsContent";
 import { ChatPage } from "./components/ChatPage";
 import NewChatPage from "./components/NewChatPage";
+
 import HomePage from "./components/HomePage";
 import { AttorneyHomePage } from "./components/AttorneyHomePage";
-import { SettingsPage } from "./components/SettingsPage";
 
 export interface ClarificationTask {
   id: string;
@@ -46,15 +46,111 @@ export interface SharedContract {
 
 const initialContracts: SharedContract[] = [];
 
+const seedContracts: SharedContract[] = [
+  // Ready for review
+  {
+    id: "seed-3",
+    name: "Master Services Agreement - TechCorp Industries.docx",
+    version: "V3",
+    fileStatus: "Awaiting Review",
+    lastUpdated: "3 hours ago",
+    submitted: "1 week ago",
+    type: "MSA",
+    company: "TechCorp Industries",
+    kanbanStatus: "ready",
+  },
+  {
+    id: "seed-4",
+    name: "Software License Agreement - Vertex AI.docx",
+    version: "V2",
+    fileStatus: "Awaiting Review",
+    lastUpdated: "5 days ago",
+    submitted: "1 week ago",
+    type: "License",
+    company: "Vertex AI",
+    kanbanStatus: "ready",
+  },
+  // In progress
+  {
+    id: "seed-5",
+    name: "Employment Agreement - Sarah Chen.docx",
+    version: "V1",
+    fileStatus: "In Review",
+    lastUpdated: "4 days ago",
+    submitted: "4 days ago",
+    type: "Employment",
+    company: "General Legal",
+    kanbanStatus: "review",
+    isLoading: true,
+    loadingText: "AI Review • Est. ~2 min",
+  },
+  {
+    id: "seed-6",
+    name: "IP Assignment Agreement - Founders.docx",
+    version: "V2",
+    fileStatus: "In Review",
+    lastUpdated: "1 week ago",
+    submitted: "2 weeks ago",
+    type: "IP",
+    company: "Internal",
+    kanbanStatus: "negotiation",
+  },
+  {
+    id: "seed-7",
+    name: "Lease Agreement - 123 Market St.docx",
+    version: "V1",
+    fileStatus: "In Review",
+    lastUpdated: "3 weeks ago",
+    submitted: "3 weeks ago",
+    type: "Lease",
+    company: "Landlord LLC",
+    kanbanStatus: "negotiation",
+  },
+  // Done
+  {
+    id: "seed-8",
+    name: "Vendor Agreement - Stripe Inc.docx",
+    version: "V1",
+    fileStatus: "Completed",
+    lastUpdated: "1 week ago",
+    submitted: "2 weeks ago",
+    type: "Vendor",
+    company: "Stripe Inc",
+    kanbanStatus: "signed",
+  },
+  {
+    id: "seed-9",
+    name: "Data Processing Agreement - AWS.docx",
+    version: "V4",
+    fileStatus: "Completed",
+    lastUpdated: "3 weeks ago",
+    submitted: "1 month ago",
+    type: "DPA",
+    company: "Amazon Web Services",
+    kanbanStatus: "signed",
+  },
+  {
+    id: "seed-10",
+    name: "Shareholder Agreement - Series A.docx",
+    version: "V2",
+    fileStatus: "Completed",
+    lastUpdated: "1 month ago",
+    submitted: "6 weeks ago",
+    type: "Shareholder",
+    company: "General Legal",
+    kanbanStatus: "signed",
+  },
+];
+
 export default function App() {
   const [contracts, setContracts] =
     useState<SharedContract[]>(initialContracts);
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
   const [view, setView] = useState<
-    "home" | "attorney" | "settings" | "files" | "chat" | "newChat"
-  >("home");
+    "home" | "attorney" | "files" | "chat" | "newChat"
+  >("files");
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeChatTitle, setActiveChatTitle] = useState<string | null>(null);
   const [scrollToId, setScrollToId] = useState<string | null>(null);
@@ -74,11 +170,13 @@ export default function App() {
 
   const toggleSidebar = () => setIsSidebarExpanded((v) => !v);
 
+  const handleSeedContracts = useCallback(() => {
+    setContracts(seedContracts);
+  }, []);
+
   const handleShowHome = () => setView("home");
 
   const handleShowAttorney = () => setView("attorney");
-
-  const handleShowSettings = () => setView("settings");
 
   const handleNewChat = () => {
     setActiveChatId(null);
@@ -203,7 +301,6 @@ export default function App() {
           isMobile={isMobile}
           onShowHome={handleShowHome}
           onInvite={handleShowAttorney}
-          onShowSettings={handleShowSettings}
           onNewChat={handleNewChat}
           onSelectChat={handleSelectChat}
           onShowFiles={handleShowFiles}
@@ -222,18 +319,7 @@ export default function App() {
                 onOpenUpload={handleOpenUpload}
                 onView={handleView}
                 onKanbanStatusChange={handleKanbanStatusChange}
-                onAskQuestion={() =>
-                  handleSelectChat("1", "Contract Review - Q4 2025")
-                }
-              />
-            ) : view === "settings" ? (
-              <SettingsPage
-                contracts={contracts}
-                onNewChat={handleNewChat}
-                onUpload={handleUpload}
-                onOpenUpload={handleOpenUpload}
-                onView={handleView}
-                onKanbanStatusChange={handleKanbanStatusChange}
+                onSeed={handleSeedContracts}
                 onAskQuestion={() =>
                   handleSelectChat("1", "Contract Review - Q4 2025")
                 }
@@ -266,6 +352,8 @@ export default function App() {
                 scrollToId={scrollToId}
                 onScrollComplete={handleScrollComplete}
                 onUpload={(contractId) => handleOpenUpload(contractId)}
+                onNewChat={handleNewChat}
+                onSeed={handleSeedContracts}
                 onAskQuestion={() =>
                   handleSelectChat("1", "Contract Review - Q4 2025")
                 }
@@ -286,7 +374,7 @@ export default function App() {
                 }}
               />
             ) : view === "newChat" ? (
-              <NewChatPage />
+              <NewChatPage onSelectChat={handleSelectChat} />
             ) : (
               <ChatPage chatId={activeChatId} title={activeChatTitle} />
             )}
