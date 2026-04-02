@@ -981,9 +981,18 @@ export function ContractsContent({
         onClose={() => setDraftModalOpen(false)}
       />
 
+      {/* Hero header */}
+      <div className="px-6 pt-10 pb-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-end justify-between">
+            <h1 className="text-3xl font-semibold text-gray-900">Files</h1>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="px-6">
-        <div className="max-w-5xl mx-auto pt-8 pb-4">
+        <div className="max-w-5xl mx-auto pb-6">
           <div className="bg-[#F3EFEB] p-4 rounded-2xl">
             <div className="flex gap-4">
               <button
@@ -1045,82 +1054,6 @@ export function ContractsContent({
             >
               Add your first contract
             </button>
-          </div>
-
-          {/* Table mockup */}
-          <div className="w-full max-w-2xl">
-            <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white">
-              {/* Mock header */}
-              <div className="grid grid-cols-[1fr_100px_130px_120px] border-b border-gray-100 px-4 py-3">
-                <div className="text-[11px] font-medium text-gray-400">
-                  File Name
-                </div>
-                <div className="text-[11px] font-medium text-gray-400">
-                  Version
-                </div>
-                <div className="text-[11px] font-medium text-gray-400">
-                  Status
-                </div>
-                <div className="text-[11px] font-medium text-gray-400">
-                  Last Updated
-                </div>
-              </div>
-              {/* Mock rows */}
-              {[
-                {
-                  name: "NDA - Client Name.docx",
-                  version: "V1",
-                  status: "In Review",
-                  updated: "Just now",
-                  statusColor: "bg-green-500",
-                },
-                {
-                  name: "Master Services Agreement.docx",
-                  version: "V3",
-                  status: "Ready for Review",
-                  updated: "2 days ago",
-                  statusColor: "bg-amber-400",
-                },
-                {
-                  name: "Employment Agreement.docx",
-                  version: "V2",
-                  status: "In Review",
-                  updated: "1 week ago",
-                  statusColor: "bg-green-500",
-                },
-              ].map((row, i) => (
-                <div
-                  key={i}
-                  className={`grid grid-cols-[1fr_100px_130px_120px] px-4 py-3 ${i < 2 ? "border-b border-gray-100" : ""} opacity-${i === 0 ? "100" : i === 1 ? "60" : "30"}`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-6 h-6 rounded bg-blue-500 flex items-center justify-center flex-shrink-0">
-                      <IconFileTypeDocx size={12} className="text-white" />
-                    </div>
-                    <span className="text-xs text-gray-700 truncate">
-                      {row.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-xs text-gray-400 border border-gray-200 rounded-full px-2 py-0.5">
-                      {row.version}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${row.statusColor} flex-shrink-0`}
-                    />
-                    <span className="text-xs text-gray-600">{row.status}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-xs text-gray-400">{row.updated}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-xs text-gray-400 mt-3">
-              Example populated files list
-            </p>
           </div>
 
           {onSeed && (

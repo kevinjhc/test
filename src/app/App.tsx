@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { UploadContractModal } from "./components/UploadContractModal";
-import { Sidebar } from "./components/Sidebar";
-import { Header } from "./components/Header";
+import { TopNav } from "./components/TopNav";
 import { ContractsContent } from "./components/ContractsContent";
 import { ChatPage } from "./components/ChatPage";
 import NewChatPage from "./components/NewChatPage";
@@ -293,94 +292,86 @@ export default function App() {
   );
 
   return (
-    <div className="h-screen flex flex-1 overflow-hidden bg-white flex-col">
-      <div className="flex w-full flex-1 min-h-0">
-        <Sidebar
-          isExpanded={isSidebarExpanded}
-          onToggle={toggleSidebar}
-          isMobile={isMobile}
-          onShowHome={handleShowHome}
-          onInvite={handleShowAttorney}
-          onNewChat={handleNewChat}
-          onSelectChat={handleSelectChat}
-          onShowFiles={handleShowFiles}
-          activeView={view}
-        />
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
+      <TopNav
+        activeView={view}
+        onShowFiles={handleShowFiles}
+        onNewChat={handleNewChat}
+        onInvite={handleShowAttorney}
+        onShowFiles2={handleShowFiles}
+      />
 
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <Header onMenuClick={toggleSidebar} />
-
-          <div className="flex-1 overflow-hidden">
-            {view === "home" ? (
-              <HomePage
-                contracts={contracts}
-                onNewChat={handleNewChat}
-                onUpload={handleUpload}
-                onOpenUpload={handleOpenUpload}
-                onView={handleView}
-                onKanbanStatusChange={handleKanbanStatusChange}
-                onSeed={handleSeedContracts}
-                onAskQuestion={() =>
-                  handleSelectChat("1", "Contract Review - Q4 2025")
-                }
-              />
-            ) : view === "attorney" ? (
-              <AttorneyHomePage
-                contracts={contracts}
-                onNewChat={handleNewChat}
-                onOpenUpload={handleOpenUpload}
-                onView={handleView}
-                onKanbanStatusChange={handleKanbanStatusChange}
-                onAskQuestion={() =>
-                  handleSelectChat("1", "Contract Review - Q4 2025")
-                }
-              />
-            ) : view === "files" ? (
-              <ContractsContent
-                contracts={contracts.map((c) => ({
-                  id: c.id,
-                  name: c.name,
-                  version: c.version,
-                  status: c.fileStatus,
-                  lastUpdated: c.lastUpdated,
-                  submitted: c.submitted,
-                  versions: c.versions,
-                  clarificationTasks: c.clarificationTasks,
-                }))}
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-                scrollToId={scrollToId}
-                onScrollComplete={handleScrollComplete}
-                onUpload={(contractId) => handleOpenUpload(contractId)}
-                onNewChat={handleNewChat}
-                onSeed={handleSeedContracts}
-                onAskQuestion={() =>
-                  handleSelectChat("1", "Contract Review - Q4 2025")
-                }
-                onClarificationSubmit={(contractId, answers) => {
-                  setContracts((prev) =>
-                    prev.map((c) =>
-                      c.id === contractId
-                        ? {
-                            ...c,
-                            needsClarification: false,
-                            clarificationTasks: undefined,
-                            isLoading: true,
-                            loadingText: "AI Review • Est. ~2 min",
-                          }
-                        : c,
-                    ),
-                  );
-                }}
-              />
-            ) : view === "newChat" ? (
-              <NewChatPage onSelectChat={handleSelectChat} />
-            ) : (
-              <ChatPage chatId={activeChatId} title={activeChatTitle} />
-            )}
-          </div>
-        </main>
-      </div>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          {view === "home" ? (
+            <HomePage
+              contracts={contracts}
+              onNewChat={handleNewChat}
+              onUpload={handleUpload}
+              onOpenUpload={handleOpenUpload}
+              onView={handleView}
+              onKanbanStatusChange={handleKanbanStatusChange}
+              onSeed={handleSeedContracts}
+              onAskQuestion={() =>
+                handleSelectChat("1", "Contract Review - Q4 2025")
+              }
+            />
+          ) : view === "attorney" ? (
+            <AttorneyHomePage
+              contracts={contracts}
+              onNewChat={handleNewChat}
+              onOpenUpload={handleOpenUpload}
+              onView={handleView}
+              onKanbanStatusChange={handleKanbanStatusChange}
+              onAskQuestion={() =>
+                handleSelectChat("1", "Contract Review - Q4 2025")
+              }
+            />
+          ) : view === "files" ? (
+            <ContractsContent
+              contracts={contracts.map((c) => ({
+                id: c.id,
+                name: c.name,
+                version: c.version,
+                status: c.fileStatus,
+                lastUpdated: c.lastUpdated,
+                submitted: c.submitted,
+                versions: c.versions,
+                clarificationTasks: c.clarificationTasks,
+              }))}
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              scrollToId={scrollToId}
+              onScrollComplete={handleScrollComplete}
+              onUpload={(contractId) => handleOpenUpload(contractId)}
+              onNewChat={handleNewChat}
+              onSeed={handleSeedContracts}
+              onAskQuestion={() =>
+                handleSelectChat("1", "Contract Review - Q4 2025")
+              }
+              onClarificationSubmit={(contractId, answers) => {
+                setContracts((prev) =>
+                  prev.map((c) =>
+                    c.id === contractId
+                      ? {
+                          ...c,
+                          needsClarification: false,
+                          clarificationTasks: undefined,
+                          isLoading: true,
+                          loadingText: "AI Review • Est. ~2 min",
+                        }
+                      : c,
+                  ),
+                );
+              }}
+            />
+          ) : view === "newChat" ? (
+            <NewChatPage onSelectChat={handleSelectChat} />
+          ) : (
+            <ChatPage chatId={activeChatId} title={activeChatTitle} />
+          )}
+        </div>
+      </main>
 
       <UploadContractModal
         open={uploadModalOpen}
