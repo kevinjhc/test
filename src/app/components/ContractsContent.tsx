@@ -860,7 +860,7 @@ function ExpandedPanel({
   const [slackModalOpen, setSlackModalOpen] = useState(false);
 
   return (
-    <div className="bg-[#F9F8F7] px-4 py-4 rounded-b-2xl">
+    <div className="bg-[#F9F8F7] px-4 py-4">
       <RequestEditsModal
         open={requestModalOpen}
         onClose={() => setRequestModalOpen(false)}
@@ -942,6 +942,7 @@ export function ContractsContent({
   onClarificationSubmit,
 }: ContractsContentProps) {
   const [openContractId, setOpenContractId] = useState<string | null>(null);
+
   const [newContractModalOpen, setNewContractModalOpen] = useState(false);
   const [draftModalOpen, setDraftModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -993,41 +994,39 @@ export function ContractsContent({
       {/* Quick Actions */}
       <div className="px-6">
         <div className="max-w-5xl mx-auto pb-6">
-          <div className="bg-[#F3EFEB] p-4 rounded-2xl">
-            <div className="flex gap-4">
-              <button
-                onClick={() => setNewContractModalOpen(true)}
-                className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
-              >
-                <div className="flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 bg-blue-50">
-                  <IconPlus size={20} className="text-blue-600" />
+          <div className="flex gap-4">
+            <button
+              onClick={() => setNewContractModalOpen(true)}
+              className="flex flex-col items-start gap-2 lg:gap-4 p-3 lg:p-5 bg-[#F3EFEB] rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
+            >
+              <div className="flex w-14 h-14 rounded-xl items-center justify-center flex-shrink-0 bg-white">
+                <IconPlus size={32} className="text-gray-700" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-normal text-gray-900 text-sm lg:text-lg">
+                  New Contract
                 </div>
-                <div className="min-w-0">
-                  <div className="font-semibold text-gray-900 text-sm lg:text-base">
-                    New Contract
-                  </div>
-                  <div className="hidden lg:block text-sm text-gray-500">
-                    Upload or draft a contract with General Legal
-                  </div>
+                <div className="hidden lg:block text-sm text-gray-500">
+                  Upload or draft a contract with General Legal
                 </div>
-              </button>
-              <button
-                onClick={onNewChat}
-                className="flex flex-col lg:flex-row items-center lg:items-center justify-center lg:justify-start gap-2 lg:gap-4 p-3 lg:p-5 bg-white border border-gray-200 rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
-              >
-                <div className="flex w-10 h-10 rounded-xl items-center justify-center flex-shrink-0 bg-orange-50">
-                  <IconMessageCircle size={20} className="text-orange-500" />
+              </div>
+            </button>
+            <button
+              onClick={onNewChat}
+              className="flex flex-col items-start gap-2 lg:gap-4 p-3 lg:p-5 bg-[#F3EFEB] rounded-2xl hover:bg-[#EEE8E2] transition-colors text-center lg:text-left flex-1 min-w-0 cursor-pointer"
+            >
+              <div className="flex w-14 h-14 rounded-xl items-center justify-center flex-shrink-0 bg-white">
+                <IconMessageCircle size={32} className="text-gray-700" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-normal text-gray-900 text-sm lg:text-lg">
+                  Chat with us
                 </div>
-                <div className="min-w-0">
-                  <div className="font-semibold text-gray-900 text-sm lg:text-base">
-                    Chat with us
-                  </div>
-                  <div className="hidden lg:block text-sm text-gray-500">
-                    Ask legal questions about your files
-                  </div>
+                <div className="hidden lg:block text-sm text-gray-500">
+                  Ask legal questions about your files
                 </div>
-              </button>
-            </div>
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -1138,15 +1137,21 @@ export function ContractsContent({
                   >
                     {/* Main row — narrow */}
                     <div
-                      className={`mx-auto border-l border-r border-gray-200 ${isOpen ? " bg-white max-w-6xl border-t -mt-[1px] overflow-hidden rounded-t-2xl" : "max-w-5xl"} ${isLast && !isOpen ? "border-b rounded-b-2xl overflow-hidden" : ""}`}
+                      className={`mx-auto border-l border-r border-gray-200 ${isOpen ? " bg-white max-w-5xl border-t -mt-[1px]" : "max-w-5xl"} ${isLast && !isOpen ? "border-b rounded-b-2xl overflow-hidden" : ""}`}
                     >
                       <div
-                        className={`grid grid-cols-[160px_1fr_110px_140px_140px_96px] transition-colors cursor-pointer ${!isLast || isOpen ? "border-b border-gray-200" : ""} ${isLast && !isOpen ? "rounded-b-2xl overflow-hidden" : ""} ${
+                        className={`grid grid-cols-[160px_1fr_110px_140px_140px_96px] transition-colors cursor-pointer ${!isLast || isOpen ? "border-b border-gray-200" : ""} ${isLast && !isOpen ? "overflow-hidden" : ""} ${
                           getTableStatus(contract) === "action-required"
-                            ? "bg-amber-50/60 hover:bg-amber-50"
+                            ? isOpen
+                              ? "bg-amber-50 hover:bg-amber-50"
+                              : "bg-amber-50/60 hover:bg-amber-50"
                             : getTableStatus(contract) === "ready"
-                              ? "bg-blue-50/40 hover:bg-blue-50"
-                              : "hover:bg-[#F9F8F7]"
+                              ? isOpen
+                                ? "bg-blue-50 hover:bg-blue-50"
+                                : "bg-blue-50/40 hover:bg-blue-50"
+                              : isOpen
+                                ? "bg-[#F9F8F7] hover:bg-[#F9F8F7]"
+                                : "hover:bg-[#F9F8F7]"
                         }`}
                         onClick={() => toggleOpen(contract.id)}
                       >
@@ -1199,7 +1204,7 @@ export function ContractsContent({
                     {/* Expanded panel — wider */}
                     {isOpen && (
                       <div
-                        className={`max-w-6xl -mt-[1px] mx-auto rounded-b-3xl overflow-hidden border border-gray-200 ${isLast ? "rounded-b-2xl" : ""}`}
+                        className={`max-w-5xl -mt-[1px] mx-auto overflow-hidden border border-gray-200 ${isLast ? "" : ""}`}
                       >
                         <ExpandedPanel
                           contract={contract}

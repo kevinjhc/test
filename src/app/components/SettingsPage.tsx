@@ -353,7 +353,7 @@ function ContractRow({
       {/* Row header */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-4 px-4 py-3.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer text-left"
+        className={`w-full flex items-center gap-4 px-4 py-3.5 transition-colors cursor-pointer text-left ${expanded ? "bg-gray-50 hover:bg-gray-50" : "bg-white hover:bg-gray-50"}`}
       >
         <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
           <IconFileTypeDocx size={16} className="text-white" />
